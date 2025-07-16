@@ -157,7 +157,7 @@ export default function InventoryPage() {
                     </Select>
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
-                    <table className="min-w-full text-sm">
+    <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2 text-left">Serial Number</th>

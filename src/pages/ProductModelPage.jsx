@@ -132,7 +132,7 @@ export default function ProductModelPage() {
                     <Input placeholder="Search by model or description..." value={searchTerm} onChange={(e) => handleSearchChange(e.target.value)} />
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
-                    <table className="w-full text-left text-sm whitespace-nowrap">
+                    <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2">Model Number</th>

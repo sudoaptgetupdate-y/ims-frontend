@@ -103,7 +103,7 @@ export default function UserManagementPage() {
                     />
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
-                    <table className="w-full text-left text-sm whitespace-nowrap">
+    <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2">Name</th>

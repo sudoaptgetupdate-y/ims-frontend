@@ -110,7 +110,7 @@ export default function CustomerPage() {
                     className="mb-4"
                 />
                 <div className="border rounded-lg overflow-x-auto">
-                    <table className="text-sm">
+                    <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2 text-left">Code</th>
