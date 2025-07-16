@@ -1,6 +1,6 @@
 // src/pages/InventoryPage.jsx
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import useAuthStore from "@/store/authStore";
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
+import { ProductModelCombobox } from "@/components/ui/ProductModelCombobox";
 
 const initialFormData = {
     serialNumber: "",
@@ -28,63 +29,41 @@ export default function InventoryPage() {
     const currentUser = useAuthStore((state) => state.user);
     const canManage = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN';
 
+    // Hook สำหรับดึงข้อมูลหลักของหน้า (Inventory Items)
     const { 
-        data: inventoryItems, 
-        pagination, 
-        isLoading, 
-        searchTerm,
-        filters,
-        handleSearchChange, 
-        handlePageChange, 
-        handleItemsPerPageChange,
-        handleFilterChange,
-        refreshData 
+        data: inventoryItems, pagination, isLoading, searchTerm, filters,
+        handleSearchChange, handlePageChange, handleItemsPerPageChange, handleFilterChange, refreshData 
     } = usePaginatedFetch("http://localhost:5001/api/inventory-items", 10, { status: "All" });
     
-    // State for Dialogs and related data
-    const [productModels, setProductModels] = useState([]);
+    // State สำหรับจัดการ Dialog และฟอร์ม
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [formData, setFormData] = useState(initialFormData);
     const [editingItemId, setEditingItemId] = useState(null);
     const [isMacRequired, setIsMacRequired] = useState(true);
     const [isSerialRequired, setIsSerialRequired] = useState(true);
+    const [selectedModelInfo, setSelectedModelInfo] = useState(null); // State สำหรับเก็บข้อมูล Model ที่เลือก
 
-    useEffect(() => {
-        const fetchAllProductModels = async () => {
-             if (!token) return;
-             try {
-                const modelsRes = await axios.get("http://localhost:5001/api/product-models", { 
-                    headers: { Authorization: `Bearer ${token}` },
-                    params: { all: 'true' }
-                });
-                setProductModels(modelsRes.data);
-             } catch (error) {
-                 toast.error("Failed to preload product models.");
-             }
-        };
-        fetchAllProductModels();
-    }, [token]);
-    
     const getStatusVariant = (status) => {
         const variants = { IN_STOCK: 'default', SOLD: 'secondary', RESERVED: 'outline', DEFECTIVE: 'destructive' };
         return variants[status] || 'secondary';
     };
     
     const openDialog = (item = null) => {
-        if (item) {
+        if (item) { // Edit Mode
             setIsEditMode(true);
             setEditingItemId(item.id);
-            const model = productModels.find(m => m.id === item.productModelId);
-            setIsMacRequired(model?.category?.requiresMacAddress ?? true);
-            setIsSerialRequired(model?.category?.requiresSerialNumber ?? true);
             setFormData({
                 serialNumber: item.serialNumber, macAddress: item.macAddress || '',
-                productModelId: String(item.productModelId), status: item.status,
+                productModelId: item.productModelId, status: item.status,
             });
-        } else {
+            setSelectedModelInfo(item.productModel); // ตั้งค่าข้อมูล Model เริ่มต้นสำหรับ Combobox
+            setIsMacRequired(item.productModel.category.requiresMacAddress);
+            setIsSerialRequired(item.productModel.category.requiresSerialNumber);
+        } else { // Add Mode
             setIsEditMode(false);
             setFormData(initialFormData);
+            setSelectedModelInfo(null); // Reset ค่าเมื่อเป็นการ Add ใหม่
             setIsMacRequired(true);
             setIsSerialRequired(true);
         }
@@ -93,28 +72,24 @@ export default function InventoryPage() {
 
     const handleInputChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value });
 
-    const handleSelectChange = (id, value) => {
-        setFormData({ ...formData, [id]: id === 'productModelId' ? parseInt(value) : value });
-        if (id === 'productModelId') {
-            const selectedModel = productModels.find(m => m.id === parseInt(value));
-            if (selectedModel) {
-                setIsMacRequired(selectedModel.category.requiresMacAddress);
-                setIsSerialRequired(selectedModel.category.requiresSerialNumber);
-                if (!selectedModel.category.requiresMacAddress) {
-                    setFormData(prev => ({ ...prev, macAddress: '' }));
-                }
-                if (!selectedModel.category.requiresSerialNumber) {
-                    setFormData(prev => ({ ...prev, serialNumber: '' }));
-                }
-            } else {
-                 setIsMacRequired(true);
-                 setIsSerialRequired(true);
-            }
+    // Handler สำหรับรับค่าจาก ProductModelCombobox
+    const handleModelSelect = (model) => {
+        if (model) {
+            setFormData(prev => ({ ...prev, productModelId: model.id }));
+            setSelectedModelInfo(model);
+            setIsMacRequired(model.category.requiresMacAddress);
+            setIsSerialRequired(model.category.requiresSerialNumber);
+             if (!model.category.requiresMacAddress) setFormData(prev => ({ ...prev, macAddress: '' }));
+             if (!model.category.requiresSerialNumber) setFormData(prev => ({ ...prev, serialNumber: '' }));
         }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!formData.productModelId) {
+            toast.error("Please select a Product Model.");
+            return;
+        }
         if (isSerialRequired && !formData.serialNumber) {
             toast.error("Serial Number is required for this product category.");
             return;
@@ -123,13 +98,15 @@ export default function InventoryPage() {
             toast.error("MAC Address is required for this product category.");
             return;
         }
+        
         const url = isEditMode ? `http://localhost:5001/api/inventory-items/${editingItemId}` : "http://localhost:5001/api/inventory-items";
         const method = isEditMode ? 'put' : 'post';
         
         const payload = {
-            ...formData,
-            productModelId: parseInt(formData.productModelId, 10),
+            serialNumber: formData.serialNumber || null,
             macAddress: formData.macAddress || null,
+            productModelId: parseInt(formData.productModelId, 10),
+            status: formData.status,
         };
 
         try {
@@ -180,14 +157,14 @@ export default function InventoryPage() {
                     </Select>
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
-                    <table className="w-full text-left text-sm whitespace-nowrap">
+                    <table className="min-w-full text-sm">
                         <thead>
                             <tr className="border-b">
-                                <th className="p-2">Serial Number</th>
-                                <th className="p-2">MAC Address</th>
-                                <th className="p-2">Product Model</th>
-                                <th className="p-2">Status</th>
-                                <th className="p-2">Added By</th>
+                                <th className="p-2 text-left">Serial Number</th>
+                                <th className="p-2 text-left">MAC Address</th>
+                                <th className="p-2 text-left">Product Model</th>
+                                <th className="p-2 text-left">Status</th>
+                                <th className="p-2 text-left">Added By</th>
                                 <th className="p-2 text-center">Actions</th>
                             </tr>
                         </thead>
@@ -197,8 +174,8 @@ export default function InventoryPage() {
                             ) : inventoryItems.length > 0 ? (
                                 inventoryItems.map((item) => (
                                     <tr key={item.id} className="border-b">
-                                        <td className="p-2">{item.serialNumber || '-'}</td>
-                                        <td className="p-2">{item.macAddress || '-'}</td>
+                                        <td className="p-2 max-w-xs truncate">{item.serialNumber || '-'}</td>
+                                        <td className="p-2 max-w-xs truncate">{item.macAddress || '-'}</td>
                                         <td className="p-2">{item.productModel.modelNumber}</td>
                                         <td className="p-2"><Badge variant={getStatusVariant(item.status)}>{item.status}</Badge></td>
                                         <td className="p-2">{item.addedBy.name}</td>
@@ -207,13 +184,11 @@ export default function InventoryPage() {
                                                 {canManage && (
                                                     <>
                                                         <Button variant="outline" size="sm" className="w-20" onClick={() => openDialog(item)}>Edit</Button>
-                                                        
                                                         {item.status === 'IN_STOCK' && (
                                                             <Button size="sm" className="w-20 bg-green-600 hover:bg-green-700" onClick={() => handleSellItem(item)}>
                                                                 Sell
                                                             </Button>
                                                         )}
-
                                                         <AlertDialog>
                                                             <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="w-20">Delete</Button></AlertDialogTrigger>
                                                             <AlertDialogContent>
@@ -223,7 +198,6 @@ export default function InventoryPage() {
                                                         </AlertDialog>
                                                     </>
                                                 )}
-                                                
                                                 {item.status === 'SOLD' && item.saleId && (
                                                     <Button variant="secondary" size="sm" className="w-20" onClick={() => navigate(`/sales/${item.saleId}`)}>
                                                         Detail
@@ -243,7 +217,7 @@ export default function InventoryPage() {
             <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Label htmlFor="rows-per-page">Rows per page:</Label>
-                    <Select value={String(pagination.itemsPerPage)} onValueChange={handleItemsPerPageChange}>
+                    <Select value={pagination ? String(pagination.itemsPerPage) : "10"} onValueChange={handleItemsPerPageChange}>
                         <SelectTrigger id="rows-per-page" className="w-20"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             {[10, 20, 50, 100].map(size => (<SelectItem key={size} value={String(size)}>{size}</SelectItem>))}
@@ -251,7 +225,7 @@ export default function InventoryPage() {
                     </Select>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                    Page {pagination.currentPage} of {pagination.totalPages} ({pagination.totalItems} items)
+                    Page {pagination?.currentPage || 1} of {pagination?.totalPages || 1} ({pagination?.totalItems || 0} items)
                 </div>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage - 1)} disabled={!pagination || pagination.currentPage <= 1}>Previous</Button>
@@ -262,16 +236,28 @@ export default function InventoryPage() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
                     <DialogHeader><DialogTitle>{isEditMode ? 'Edit' : 'Add New'} Item</DialogTitle></DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                         <div className="space-y-2">
-                             <Label htmlFor="productModelId">Product Model</Label>
-                             <Select onValueChange={(value) => handleSelectChange('productModelId', value)} value={String(formData.productModelId || '')} required>
-                                 <SelectTrigger><SelectValue placeholder="Select a model" /></SelectTrigger>
-                                 <SelectContent>
-                                     {productModels.map(model => <SelectItem key={model.id} value={String(model.id)}>{model.category.name} - {model.modelNumber}</SelectItem>)}
-                                 </SelectContent>
-                             </Select>
+                             <Label>Product Model</Label>
+                             <ProductModelCombobox 
+                                onSelect={handleModelSelect}
+                                initialModel={selectedModelInfo}
+                             />
                         </div>
+
+                        {selectedModelInfo && (
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Category</Label>
+                                    <Input value={selectedModelInfo.category.name} disabled />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Brand</Label>
+                                    <Input value={selectedModelInfo.brand.name} disabled />
+                                </div>
+                            </div>
+                        )}
+
                         <div className="space-y-2">
                             <Label htmlFor="serialNumber">
                                 Serial Number
@@ -286,10 +272,11 @@ export default function InventoryPage() {
                              </Label>
                              <Input id="macAddress" value={formData.macAddress || ''} onChange={handleInputChange} required={isMacRequired} />
                         </div>
+
                         {isEditMode && (
                              <div className="space-y-2">
                                 <Label htmlFor="status">Status</Label>
-                                <Select onValueChange={(value) => handleSelectChange('status', value)} value={formData.status}>
+                                <Select onValueChange={(value) => setFormData(prev => ({...prev, status: value}))} value={formData.status}>
                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="IN_STOCK">In Stock</SelectItem>
