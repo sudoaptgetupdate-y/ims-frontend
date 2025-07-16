@@ -109,8 +109,8 @@ export default function CustomerPage() {
                     onChange={(e) => handleSearchChange(e.target.value)}
                     className="mb-4"
                 />
-                <div className="border rounded-lg">
-                    <table className="w-full text-sm">
+                <div className="border rounded-lg overflow-x-auto">
+                    <table className="text-sm">
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2 text-left">Code</th>

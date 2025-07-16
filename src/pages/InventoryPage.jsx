@@ -128,6 +128,7 @@ export default function InventoryPage() {
         
         const payload = {
             ...formData,
+            productModelId: parseInt(formData.productModelId, 10),
             macAddress: formData.macAddress || null,
         };
 
