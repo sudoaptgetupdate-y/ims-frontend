@@ -5,7 +5,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 
 // Components & Pages
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
@@ -31,21 +31,26 @@ import ActiveBorrowingsPage from './pages/ActiveBorrowingsPage.jsx';
 import CustomerReturnedHistoryPage from './pages/CustomerReturnedHistoryPage.jsx';
 import CustomerPurchaseHistoryPage from './pages/CustomerPurchaseHistoryPage.jsx';
 
+// โครงสร้าง Router ที่แก้ไขใหม่ให้เสถียรขึ้น
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <App />,
+    element: <App />, // App component เป็น Shell หลักที่ครอบทั้งหมด
     children: [
+      // --- Public Route ---
       {
-        path: '/login',
+        path: 'login',
         element: <LoginPage />
       },
+      // --- Protected Routes ---
       {
-        element: <ProtectedRoute />,
+        element: <ProtectedRoute />, // ตัวเช็ค Token
         children: [
           {
-            element: <MainLayout />,
+            element: <MainLayout />, // Layout สำหรับหน้าหลังบ้านทั้งหมด
             children: [
+              // ถ้าเข้ามาที่ path "/" ให้ redirect ไป "/dashboard"
+              { index: true, element: <Navigate to="/dashboard" replace /> },
               { path: 'dashboard', element: <DashboardRedirect /> },
               { path: 'inventory', element: <InventoryPage /> },
               { path: 'users', element: <UserManagementPage /> },
@@ -54,14 +59,8 @@ const router = createBrowserRouter([
               { path: 'customers', element: <CustomerPage /> },
               { path: 'customers/:id/history', element: <CustomerHistoryPage /> },
               { path: 'customers/:id/active-borrowings', element: <ActiveBorrowingsPage />},
-               {
-                path: 'customers/:id/returned-history',
-                element: <CustomerReturnedHistoryPage />
-              },
-              {
-                path: 'customers/:id/purchase-history',
-                element: <CustomerPurchaseHistoryPage />
-              },
+              { path: 'customers/:id/returned-history', element: <CustomerReturnedHistoryPage /> },
+              { path: 'customers/:id/purchase-history', element: <CustomerPurchaseHistoryPage /> },
               { path: 'sales', element: <SalePage /> },
               { path: 'sales/new', element: <CreateSalePage /> },
               { path: 'sales/:saleId', element: <SaleDetailPage /> },
@@ -77,10 +76,10 @@ const router = createBrowserRouter([
       }
     ]
   }
-])
+]);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <RouterProvider router={router} />
   </React.StrictMode>,
-)
+);
