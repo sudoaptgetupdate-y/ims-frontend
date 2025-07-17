@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { CustomerCombobox } from "@/components/ui/CustomerCombobox";
 
+// Debounce hook to prevent API calls on every keystroke
 function useDebounce(value, delay) {
     const [debouncedValue, setDebouncedValue] = useState(value);
     useEffect(() => {
@@ -25,14 +26,17 @@ export default function CreateSalePage() {
     const navigate = useNavigate();
     const token = useAuthStore((state) => state.token);
     const location = useLocation();
-    const initialItemsFromState = location.state?.initialItems;
+    
+    // ตั้งค่า state เริ่มต้นจาก location state หากมี
+    const initialItemsFromState = location.state?.initialItems || [];
     const [availableItems, setAvailableItems] = useState([]);
+    const [selectedItems, setSelectedItems] = useState(initialItemsFromState);
+    
     const [selectedCustomerId, setSelectedCustomerId] = useState("");
-    const [selectedItems, setSelectedItems] = useState([]);
     const [itemSearch, setItemSearch] = useState("");
-
     const debouncedItemSearch = useDebounce(itemSearch, 500);
 
+    // useEffect สำหรับดึงข้อมูลสินค้าคงคลัง
     useEffect(() => {
         const fetchInventory = async () => {
             if (!token) return;
@@ -45,31 +49,31 @@ export default function CreateSalePage() {
                     }
                 });
                 
+                // กรองรายการสินค้าที่ถูกเลือกไปแล้วออกจากรายการที่แสดงให้เลือก
                 const selectedIds = new Set(selectedItems.map(i => i.id));
-                const newAvailableItems = inventoryRes.data.filter(item => !selectedIds.has(item.id));
+                setAvailableItems(inventoryRes.data.filter(item => !selectedIds.has(item.id)));
 
-                if (initialItemsFromState && debouncedItemSearch === '') {
-                    setSelectedItems(initialItemsFromState);
-                    const initialItemIds = new Set(initialItemsFromState.map(i => i.id));
-                    setAvailableItems(newAvailableItems.filter(item => !initialItemIds.has(item.id)));
-                } else {
-                    setAvailableItems(newAvailableItems);
-                }
             } catch (error) {
                 toast.error("Failed to fetch inventory items.");
             }
         };
         fetchInventory();
-    }, [token, debouncedItemSearch]);
+    }, [token, debouncedItemSearch]); // เอา selectedItems ออก เพื่อไม่ให้ re-fetch ทุกครั้งที่เพิ่ม/ลบ
 
     const handleAddItem = (itemToAdd) => {
-        setSelectedItems([...selectedItems, itemToAdd]);
-        setAvailableItems(availableItems.filter(item => item.id !== itemToAdd.id));
+        // เพิ่มในรายการที่เลือก
+        setSelectedItems(prev => [...prev, itemToAdd]);
+        // ลบออกจากรายการที่ว่าง
+        setAvailableItems(prev => prev.filter(item => item.id !== itemToAdd.id));
     };
 
     const handleRemoveItem = (itemToRemove) => {
-        setSelectedItems(selectedItems.filter(item => item.id !== itemToRemove.id));
-        setAvailableItems([itemToRemove, ...availableItems]);
+        // ลบออกจากรายการที่เลือก
+        setSelectedItems(prev => prev.filter(item => item.id !== itemToRemove.id));
+        // เพิ่มกลับเข้ารายการที่ว่าง (ถ้าไม่มีการค้นหา)
+        if (!itemSearch) {
+            setAvailableItems(prev => [itemToRemove, ...prev]);
+        }
     };
 
     const handleSubmitSale = async () => {
@@ -129,14 +133,12 @@ export default function CreateSalePage() {
                             <tbody>
                                 {availableItems.map(item => (
                                     <tr key={item.id} className="border-b">
-                                        {/* --- START: แก้ไขรายการในตาราง --- */}
                                         <td className="p-2">{item.productModel.category.name}</td>
                                         <td className="p-2">{item.productModel.brand.name}</td>
                                         <td className="p-2">{item.productModel.modelNumber}</td>
                                         <td className="p-2">{item.serialNumber || '-'}</td>
                                         <td className="p-2 text-right">{item.productModel.sellingPrice.toLocaleString()}</td>
                                         <td className="p-2 text-center"><Button size="sm" onClick={() => handleAddItem(item)}>Add</Button></td>
-                                        {/* --- END --- */}
                                     </tr>
                                 ))}
                             </tbody>

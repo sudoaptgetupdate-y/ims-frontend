@@ -45,10 +45,12 @@ export default function SaleDetailPage() {
 
     return (
         <div className="space-y-6">
-            <Button variant="outline" onClick={() => navigate('/sales')}>
+            {/* --- START: ส่วนที่แก้ไข --- */}
+            <Button variant="outline" onClick={() => navigate(-1)}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Sales List
+                Back
             </Button>
+            {/* --- END --- */}
 
             <Card>
                 <CardHeader>

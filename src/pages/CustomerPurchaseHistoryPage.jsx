@@ -46,7 +46,7 @@ export default function CustomerPurchaseHistoryPage() {
                     <h1 className="text-2xl font-bold">Full Purchase History</h1>
                     <p className="text-muted-foreground">For Customer: {customerName}</p>
                 </div>
-                <Button variant="outline" onClick={() => navigate(`/customers/${customerId}/history`)}>
+                <Button variant="outline" onClick={() => navigate(`/customers/${customerId}/history`, { state: { defaultTab: 'summary' } })}>
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Summary
                 </Button>

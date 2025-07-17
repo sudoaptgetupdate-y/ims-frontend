@@ -16,6 +16,18 @@ import { Label } from "@/components/ui/label";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import { ProductModelCombobox } from "@/components/ui/ProductModelCombobox";
 
+// --- START: ส่วนที่แก้ไข: เปลี่ยนไอคอน MoreHorizontal เป็น Settings2 ---
+import { Settings2, View, ShoppingCart, ArrowRightLeft, Edit, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+// --- END ---
+
 const initialFormData = {
     serialNumber: "",
     macAddress: "",
@@ -42,14 +54,13 @@ export default function InventoryPage() {
     const [isSerialRequired, setIsSerialRequired] = useState(true);
     const [selectedModelInfo, setSelectedModelInfo] = useState(null);
 
-    // === จุดที่แก้ไข 1: เพิ่มสถานะ BORROWED ใน getStatusVariant ===
     const getStatusVariant = (status) => {
         const variants = { 
-            IN_STOCK: 'default', 
+            IN_STOCK: 'default',
             SOLD: 'secondary', 
             RESERVED: 'outline', 
             DEFECTIVE: 'destructive',
-            BORROWED: 'default' // ใช้สีเดียวกับ IN_STOCK หรือเปลี่ยนเป็นสีอื่นได้
+            BORROWED: 'default'
         };
         return variants[status] || 'secondary';
     };
@@ -132,6 +143,7 @@ export default function InventoryPage() {
     };
 
     const handleSellItem = (itemToSell) => navigate('/sales/new', { state: { initialItems: [itemToSell] } });
+    const handleBorrowItem = (itemToBorrow) => navigate('/borrowings/new', { state: { initialItems: [itemToBorrow] } });
 
     return (
         <Card>
@@ -147,7 +159,6 @@ export default function InventoryPage() {
                         onChange={(e) => handleSearchChange(e.target.value)}
                         className="flex-grow"
                     />
-                    {/* === จุดที่แก้ไข 2: เพิ่มสถานะ BORROWED ใน Filter === */}
                     <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
                         <SelectTrigger className="w-full sm:w-[180px]">
                             <SelectValue placeholder="Filter by Status..." />
@@ -166,9 +177,9 @@ export default function InventoryPage() {
                     <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="border-b">
+                                <th className="p-2 text-left">Product Model</th>
                                 <th className="p-2 text-left">Serial Number</th>
                                 <th className="p-2 text-left">MAC Address</th>
-                                <th className="p-2 text-left">Product Model</th>
                                 <th className="p-2 text-left">Status</th>
                                 <th className="p-2 text-left">Added By</th>
                                 <th className="p-2 text-center">Actions</th>
@@ -180,42 +191,74 @@ export default function InventoryPage() {
                             ) : inventoryItems.length > 0 ? (
                                 inventoryItems.map((item) => (
                                     <tr key={item.id} className="border-b">
+                                        <td className="p-2">{item.productModel.modelNumber}</td>
                                         <td className="p-2 max-w-xs truncate">{item.serialNumber || '-'}</td>
                                         <td className="p-2 max-w-xs truncate">{item.macAddress || '-'}</td>
-                                        <td className="p-2">{item.productModel.modelNumber}</td>
                                         <td className="p-2"><Badge variant={getStatusVariant(item.status)}>{item.status}</Badge></td>
                                         <td className="p-2">{item.addedBy.name}</td>
-                                        <td className="p-2">
-                                            <div className="flex items-center justify-center gap-2">
-                                                {/* === จุดที่แก้ไข 3: เพิ่มเงื่อนไขแสดงปุ่มตามสถานะ === */}
-                                                {canManage && item.status !== 'SOLD' && item.status !== 'BORROWED' && (
-                                                    <Button variant="outline" size="sm" className="w-20" onClick={() => openDialog(item)}>Edit</Button>
-                                                )}
-                                                {item.status === 'IN_STOCK' && (
-                                                    <Button size="sm" className="w-20 bg-green-600 hover:bg-green-700" onClick={() => handleSellItem(item)}>
-                                                        Sell
+                                        <td className="p-2 text-center">
+                                            <DropdownMenu>
+                                                {/* --- START: ส่วนที่แก้ไข 2: เปลี่ยนไอคอนในปุ่ม --- */}
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                        <span className="sr-only">Open menu</span>
+                                                        <Settings2 className="h-4 w-4" />
                                                     </Button>
-                                                )}
-                                                {item.status === 'SOLD' && item.saleId && (
-                                                    <Button variant="secondary" size="sm" className="w-20" onClick={() => navigate(`/sales/${item.saleId}`)}>
-                                                        Detail
-                                                    </Button>
-                                                )}
-                                                {item.status === 'BORROWED' && item.borrowingId && (
-                                                    <Button variant="secondary" size="sm" className="w-20" onClick={() => navigate(`/borrowings/${item.borrowingId}`)}>
-                                                        Detail
-                                                    </Button>
-                                                )}
-                                                {canManage && item.status !== 'SOLD' && item.status !== 'BORROWED' && (
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="w-20">Delete</Button></AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the item: <strong>{item.serialNumber}</strong>.</AlertDialogDescription></AlertDialogHeader>
-                                                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(item.id)}>Continue</AlertDialogAction></AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                )}
-                                            </div>
+                                                </DropdownMenuTrigger>
+                                                {/* --- END --- */}
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        onClick={() => {
+                                                            if (item.status === 'SOLD') navigate(`/sales/${item.saleId}`);
+                                                            if (item.status === 'BORROWED') navigate(`/borrowings/${item.borrowingId}`);
+                                                        }}
+                                                        disabled={item.status !== 'SOLD' && item.status !== 'BORROWED'}
+                                                    >
+                                                        <View className="mr-2 h-4 w-4" /> View Details
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={() => handleSellItem(item)}
+                                                        disabled={item.status !== 'IN_STOCK'}
+                                                    >
+                                                        <ShoppingCart className="mr-2 h-4 w-4" /> Sell
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem
+                                                        onClick={() => handleBorrowItem(item)}
+                                                        disabled={item.status !== 'IN_STOCK'}
+                                                    >
+                                                        <ArrowRightLeft className="mr-2 h-4 w-4" /> Borrow
+                                                    </DropdownMenuItem>
+                                                    
+                                                    {canManage && (
+                                                        <>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                onClick={() => openDialog(item)}
+                                                                disabled={item.status === 'SOLD' || item.status === 'BORROWED'}
+                                                            >
+                                                                <Edit className="mr-2 h-4 w-4" /> Edit Item
+                                                            </DropdownMenuItem>
+                                                            <AlertDialog>
+                                                                <AlertDialogTrigger asChild>
+                                                                    <div 
+                                                                        className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-red-600 focus:text-red-500"
+                                                                        onSelect={(e) => { if (item.status === 'SOLD' || item.status === 'BORROWED') e.preventDefault(); }}
+                                                                        disabled={item.status === 'SOLD' || item.status === 'BORROWED'}
+                                                                    >
+                                                                        <Trash2 className="mr-2 h-4 w-4" /> Delete Item
+                                                                    </div>
+                                                                </AlertDialogTrigger>
+                                                                <AlertDialogContent>
+                                                                    <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the item: <strong>{item.serialNumber}</strong>.</AlertDialogDescription></AlertDialogHeader>
+                                                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(item.id)}>Continue</AlertDialogAction></AlertDialogFooter>
+                                                                </AlertDialogContent>
+                                                            </AlertDialog>
+                                                        </>
+                                                    )}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </td>
                                     </tr>
                                 ))
@@ -244,47 +287,28 @@ export default function InventoryPage() {
                     <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={!pagination || pagination.currentPage >= pagination.totalPages}>Next</Button>
                 </div>
             </CardFooter>
-            
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
                     <DialogHeader><DialogTitle>{isEditMode ? 'Edit' : 'Add New'} Item</DialogTitle></DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                         <div className="space-y-2">
                              <Label>Product Model</Label>
-                             <ProductModelCombobox 
-                                onSelect={handleModelSelect}
-                                initialModel={selectedModelInfo}
-                             />
+                             <ProductModelCombobox onSelect={handleModelSelect} initialModel={selectedModelInfo} />
                         </div>
-
                         {selectedModelInfo && (
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Category</Label>
-                                    <Input value={selectedModelInfo.category.name} disabled />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Brand</Label>
-                                    <Input value={selectedModelInfo.brand.name} disabled />
-                                </div>
+                                <div className="space-y-2"><Label>Category</Label><Input value={selectedModelInfo.category.name} disabled /></div>
+                                <div className="space-y-2"><Label>Brand</Label><Input value={selectedModelInfo.brand.name} disabled /></div>
                             </div>
                         )}
-
                         <div className="space-y-2">
-                            <Label htmlFor="serialNumber">
-                                Serial Number
-                                {!isSerialRequired && <span className="text-xs text-slate-500 ml-2">(Optional)</span>}
-                            </Label>
+                            <Label htmlFor="serialNumber">Serial Number{!isSerialRequired && <span className="text-xs text-slate-500 ml-2">(Optional)</span>}</Label>
                             <Input id="serialNumber" value={formData.serialNumber || ''} onChange={handleInputChange} required={isSerialRequired} />
                         </div>
                         <div className="space-y-2">
-                             <Label htmlFor="macAddress">
-                                 MAC Address
-                                 {!isMacRequired && <span className="text-xs text-slate-500 ml-2">(Optional)</span>}
-                             </Label>
+                             <Label htmlFor="macAddress">MAC Address{!isMacRequired && <span className="text-xs text-slate-500 ml-2">(Optional)</span>}</Label>
                              <Input id="macAddress" value={formData.macAddress || ''} onChange={handleInputChange} required={isMacRequired} />
                         </div>
-
                         {isEditMode && (
                              <div className="space-y-2">
                                 <Label htmlFor="status">Status</Label>

@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ArrowLeft, CheckSquare, Square } from "lucide-react";
-// 1. Import AlertDialog components
 import {
     AlertDialog,
     AlertDialogAction,
@@ -82,10 +81,12 @@ export default function BorrowingDetailPage() {
 
     return (
         <div className="space-y-6">
-            <Button variant="outline" onClick={() => navigate('/borrowings')}>
+            {/* --- START: ส่วนที่แก้ไข --- */}
+            <Button variant="outline" onClick={() => navigate(-1)}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Borrowing List
+                Back
             </Button>
+            {/* --- END --- */}
 
             <Card>
                 <CardHeader>
@@ -124,7 +125,6 @@ export default function BorrowingDetailPage() {
                         </div>
                     </CardContent>
                     <CardFooter>
-                        {/* 2. แก้ไขปุ่มให้เป็น AlertDialog */}
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button disabled={selectedToReturn.length === 0}>
@@ -146,7 +146,6 @@ export default function BorrowingDetailPage() {
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
-                        {/* ============================= */}
                     </CardFooter>
                 </Card>
             )}

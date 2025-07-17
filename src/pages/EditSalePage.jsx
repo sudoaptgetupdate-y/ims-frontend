@@ -34,17 +34,31 @@ export default function EditSalePage() {
     
     const debouncedItemSearch = useDebounce(itemSearch, 500);
 
+    // useEffect สำหรับดึงข้อมูลตั้งต้นของ Sale ที่จะแก้ไข
     useEffect(() => {
         const fetchInitialData = async () => {
             if (!token || !saleId) return;
             try {
+                setLoading(true);
                 const saleRes = await axios.get(`http://localhost:5001/api/sales/${saleId}`, { headers: { Authorization: `Bearer ${token}` } });
-                setInitialCustomer(saleRes.data.customer);
-                setSelectedCustomerId(String(saleRes.data.customerId));
-                setSelectedItems(saleRes.data.itemsSold);
+                const saleData = saleRes.data;
+                
+                setInitialCustomer(saleData.customer);
+                setSelectedCustomerId(String(saleData.customerId));
+                setSelectedItems(saleData.itemsSold);
+                
+                // ดึงรายการสินค้าทั้งหมดหลังจากได้ข้อมูล sale แล้ว
+                const inventoryRes = await axios.get("http://localhost:5001/api/inventory-items", {
+                    headers: { Authorization: `Bearer ${token}` },
+                    params: { all: 'true', search: '' }
+                });
+
+                const selectedIds = new Set(saleData.itemsSold.map(i => i.id));
+                setAvailableItems(inventoryRes.data.filter(item => !selectedIds.has(item.id)));
+
             } catch (error) {
                 toast.error("Failed to fetch initial sale data.");
-                navigate("/sales"); // Go back if sale not found
+                navigate("/sales");
             } finally {
                 setLoading(false);
             }
@@ -52,45 +66,40 @@ export default function EditSalePage() {
         fetchInitialData();
     }, [saleId, token, navigate]);
     
+    // useEffect สำหรับค้นหาสินค้า (ทำงานหลังจาก loading ข้อมูลตั้งต้นเสร็จ)
     useEffect(() => {
-        const fetchInventory = async () => {
-            if (!token) return;
+        const fetchInventoryOnSearch = async () => {
+            if (loading || !token) return; // ไม่ต้องทำถ้ายังโหลดข้อมูลตั้งต้นไม่เสร็จ
             try {
                 const inventoryRes = await axios.get("http://localhost:5001/api/inventory-items", {
                     headers: { Authorization: `Bearer ${token}` },
-                    params: { 
-                        all: 'true',
-                        search: debouncedItemSearch
-                    }
+                    params: { all: 'true', search: debouncedItemSearch }
                 });
-                setAvailableItems(inventoryRes.data);
+                const selectedIds = new Set(selectedItems.map(i => i.id));
+                setAvailableItems(inventoryRes.data.filter(item => !selectedIds.has(item.id)));
             } catch (error) {
                 toast.error("Failed to fetch inventory items.");
             }
         };
-        if (!loading) {
-            fetchInventory();
-        }
-    }, [token, debouncedItemSearch, loading]);
-
+        fetchInventoryOnSearch();
+    }, [debouncedItemSearch, loading, token]);
 
     const handleAddItem = (itemToAdd) => {
-        setSelectedItems([...selectedItems, itemToAdd]);
+        setSelectedItems(prev => [...prev, itemToAdd]);
+        setAvailableItems(prev => prev.filter(item => item.id !== itemToAdd.id));
     };
     
     const handleRemoveItem = (itemToRemove) => {
-        setSelectedItems(selectedItems.filter(item => item.id !== itemToRemove.id));
+        setSelectedItems(prev => prev.filter(item => item.id !== itemToRemove.id));
+        if (!itemSearch) {
+            setAvailableItems(prev => [itemToRemove, ...prev]);
+        }
     };
 
     const handleSubmit = async () => {
-        if (!selectedCustomerId) {
-            toast.error("Please select a customer.");
-            return;
-        }
-        if (selectedItems.length === 0) {
-            toast.error("Please add at least one item to the sale.");
-            return;
-        }
+        if (!selectedCustomerId) { toast.error("Please select a customer."); return; }
+        if (selectedItems.length === 0) { toast.error("Please add at least one item to the sale."); return; }
+        
         const payload = {
             customerId: parseInt(selectedCustomerId),
             inventoryItemIds: selectedItems.map(item => item.id),
@@ -106,9 +115,6 @@ export default function EditSalePage() {
     
     if (loading) return <p>Loading sale data...</p>;
 
-    const selectedItemIds = new Set(selectedItems.map(i => i.id));
-    const filteredAvailableItems = availableItems.filter(item => !selectedItemIds.has(item.id));
-    
     const subtotal = selectedItems.reduce((total, item) => total + (item.productModel?.sellingPrice || 0), 0);
     const vatAmount = subtotal * 0.07;
     const total = subtotal + vatAmount;
@@ -140,7 +146,7 @@ export default function EditSalePage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredAvailableItems.map(item => (
+                                {availableItems.map(item => (
                                 <tr key={item.id} className="border-b">
                                     <td className="p-2">{item.productModel.category.name}</td>
                                     <td className="p-2">{item.productModel.brand.name}</td>

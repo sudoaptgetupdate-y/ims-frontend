@@ -1,36 +1,30 @@
 // src/pages/CustomerHistoryPage.jsx
 
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import useAuthStore from "@/store/authStore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ArrowLeft, ShoppingCart, PackageOpen, Package, History } from "lucide-react";
+import { ArrowLeft, ShoppingCart, PackageOpen, History } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 
-// Component HistoryList ไม่มีการแก้ไข
 const HistoryList = ({ transactions }) => {
     const navigate = useNavigate();
-
     const getTransactionIcon = (type) => {
       if (type === 'SALE') return <ShoppingCart className="h-5 w-5 text-green-600" />;
       if (type === 'BORROWING') return <PackageOpen className="h-5 w-5 text-blue-600" />;
       return null;
     };
-
     const getDetailLink = (item) => {
       if (item.type === 'SALE') return `/sales/${item.details.id}`;
       if (item.type === 'BORROWING') return `/borrowings/${item.details.id}`;
       return '#';
     };
-
     if (transactions.length === 0) {
         return <p className="text-center py-8 text-muted-foreground">No transaction history found.</p>
     }
-
     return (
         <div className="space-y-4 pt-4">
             {transactions.map((item) => (
@@ -56,13 +50,10 @@ const HistoryList = ({ transactions }) => {
     );
 };
 
-// Component SummaryView (มีการแก้ไข)
 const SummaryView = ({ summary }) => {
     const navigate = useNavigate();
     const { id: customerId } = useParams();
-
     if (!summary) return <p className="text-center py-8">Loading summary...</p>;
-
     return (
         <div className="space-y-6 pt-4">
             <Card 
@@ -88,7 +79,6 @@ const SummaryView = ({ summary }) => {
                 </CardContent>
             </Card>
 
-            {/* === ส่วนที่แก้ไข 1: ทำให้ Card คลิกได้ === */}
             <Card 
                 className={summary.returnedItemsHistory.length > 0 ? "cursor-pointer hover:border-primary transition-colors" : ""}
                 onClick={() => {
@@ -114,7 +104,6 @@ const SummaryView = ({ summary }) => {
                 </CardContent>
             </Card>
 
-            {/* === ส่วนที่แก้ไข 2: ทำให้ Card คลิกได้ === */}
             <Card
                 className={summary.purchaseHistory.length > 0 ? "cursor-pointer hover:border-primary transition-colors" : ""}
                 onClick={() => {
@@ -141,17 +130,30 @@ const SummaryView = ({ summary }) => {
     )
 }
 
-// Component หลัก (ไม่มีการแก้ไข)
 export default function CustomerHistoryPage() {
     const { id: customerId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const token = useAuthStore((state) => state.token);
+    
+    // --- START: ส่วนที่แก้ไข ---
+    // 1. ตั้งค่าเริ่มต้นให้เป็น 'history' เสมอ
+    const [activeTab, setActiveTab] = useState('history');
+    // --- END ---
     
     const [history, setHistory] = useState([]);
     const [summary, setSummary] = useState(null);
     const [customer, setCustomer] = useState(null);
     const [loading, setLoading] = useState(true);
     
+    // 2. ใช้ useEffect เพื่ออัปเดต tab ตาม location.state ที่ส่งมา
+    useEffect(() => {
+        if (location.state?.defaultTab) {
+            setActiveTab(location.state.defaultTab);
+        }
+    }, [location.state]);
+
+
     useEffect(() => {
         const fetchData = async () => {
             if (!customerId || !token) return;
@@ -190,7 +192,7 @@ export default function CustomerHistoryPage() {
                 </Button>
             </div>
 
-            <Tabs defaultValue="history" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow">Transaction History</TabsTrigger>
                     <TabsTrigger value="summary" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow">Asset Summary</TabsTrigger>

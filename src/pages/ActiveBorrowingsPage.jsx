@@ -18,7 +18,6 @@ export default function ActiveBorrowingsPage() {
     const navigate = useNavigate();
     const token = useAuthStore((state) => state.token);
     
-    // === ส่วนที่แก้ไข 1: เปลี่ยนชื่อ state เพื่อความชัดเจน ===
     const [allItems, setAllItems] = useState([]); 
     const [customer, setCustomer] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -36,11 +35,10 @@ export default function ActiveBorrowingsPage() {
                 })
             ]);
             
-            // === ส่วนที่แก้ไข 2: "คลี่" ข้อมูลทั้งหมดออกเป็นรายการเดียว ===
             const flattenedItems = borrowingsRes.data.flatMap(transaction => 
                 transaction.items.map(item => ({
                     ...item,
-                    borrowingId: transaction.id // เพิ่ม borrowingId เข้าไปในแต่ละไอเทม
+                    borrowingId: transaction.id
                 }))
             );
             setAllItems(flattenedItems);
@@ -79,13 +77,11 @@ export default function ActiveBorrowingsPage() {
                     <h1 className="text-2xl font-bold">Active Borrowed Items</h1>
                     <p className="text-muted-foreground">For Customer: {customer?.name || '...'}</p>
                 </div>
-                <Button variant="outline" onClick={() => navigate(`/customers/${customerId}/history`)}>
+                <Button variant="outline" onClick={() => navigate(`/customers/${customerId}/history`, { state: { defaultTab: 'summary' } })}>
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to History
+                    Back to Summary
                 </Button>
             </div>
-
-            {/* === ส่วนที่แก้ไข 3: สร้าง Card และตารางเพียงชุดเดียว === */}
             <Card>
                 <CardHeader>
                     <CardTitle>All Borrowed Items ({allItems.length})</CardTitle>
