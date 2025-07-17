@@ -1,6 +1,7 @@
 // src/pages/CustomerPage.jsx
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import useAuthStore from "@/store/authStore";
 import { Button } from "@/components/ui/button";
@@ -8,50 +9,31 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { PlusCircle } from "lucide-react";
 import CustomerFormDialog from "@/components/dialogs/CustomerFormDialog";
-import CustomerPurchaseHistoryDialog from "@/components/dialogs/CustomerPurchaseHistoryDialog";
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-// 1. Import hook ที่เราสร้างขึ้นมา
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 
 export default function CustomerPage() {
+    const navigate = useNavigate();
     const token = useAuthStore((state) => state.token);
     const user = useAuthStore((state) => state.user);
     const canManage = user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN';
 
-    // 2. เรียกใช้ Custom Hook ด้วยการส่ง URL ของ API ที่ต้องการเข้าไป
-    // โค้ดที่ซับซ้อนทั้งหมดถูกซ่อนไว้ใน Hook นี้แล้ว
     const { 
-        data: customers, 
-        pagination, 
-        isLoading, 
-        searchTerm,
-        handleSearchChange, 
-        handlePageChange, 
-        handleItemsPerPageChange,
-        refreshData 
+        data: customers, pagination, isLoading, searchTerm,
+        handleSearchChange, handlePageChange, handleItemsPerPageChange, refreshData 
     } = usePaginatedFetch("http://localhost:5001/api/customers");
 
-    // State สำหรับควบคุม Dialog ยังคงจัดการที่หน้านี้เหมือนเดิม
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
-    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
 
-    // ฟังก์ชันจัดการ Dialog ยังเหมือนเดิม
     const handleAdd = () => {
         setIsEditMode(false);
         setSelectedCustomer(null);
@@ -68,11 +50,6 @@ export default function CustomerPage() {
         setSelectedCustomer(customer);
         setIsConfirmDeleteOpen(true);
     };
-    
-    const handleViewHistory = (customer) => {
-        setSelectedCustomer(customer);
-        setIsHistoryOpen(true);
-    };
 
     const confirmDelete = async () => {
         try {
@@ -80,7 +57,7 @@ export default function CustomerPage() {
                 headers: { Authorization: `Bearer ${token}` },
             });
             toast.success("Customer deleted successfully.");
-            refreshData(); // 3. เมื่อลบสำเร็จ ให้เรียกฟังก์ชัน refreshData จาก Hook
+            refreshData(); 
         } catch (error) {
             toast.error(error.response?.data?.error || "Failed to delete customer.");
         } finally {
@@ -132,7 +109,7 @@ export default function CustomerPage() {
                                         <td className="p-2">{customer.address || '-'}</td>
                                         <td className="p-2">
                                             <div className="flex items-center justify-center gap-2">
-                                                <Button variant="outline" size="sm" className="w-20" onClick={() => handleViewHistory(customer)}>View</Button>
+                                                <Button variant="outline" size="sm" className="w-20" onClick={() => navigate(`/customers/${customer.id}/history`)}>History</Button>
                                                 {canManage && (
                                                     <>
                                                         <Button variant="outline" size="sm" className="w-20" onClick={() => handleEdit(customer)}>Edit</Button>
@@ -151,7 +128,6 @@ export default function CustomerPage() {
                 </div>
             </CardContent>
             
-            {/* 4. เพิ่ม CardFooter ที่มีส่วนควบคุม Pagination */}
             <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Label htmlFor="rows-per-page">Rows per page:</Label>
@@ -177,11 +153,6 @@ export default function CustomerPage() {
                 customer={selectedCustomer}
                 isEditMode={isEditMode}
                 onSuccess={refreshData}
-            />
-            <CustomerPurchaseHistoryDialog
-                open={isHistoryOpen}
-                onOpenChange={setIsHistoryOpen}
-                customer={selectedCustomer}
             />
             <AlertDialog open={isConfirmDeleteOpen} onOpenChange={setIsConfirmDeleteOpen}>
                 <AlertDialogContent>
