@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LogOut, Menu, X, UserCircle, User, LockKeyhole, Building2, ShoppingCart, Settings, Package, Boxes, Tag, Users } from "lucide-react";
+// 1. เพิ่มไอคอน PackageOpen เข้ามา
+import { LogOut, Menu, X, UserCircle, User, PackageOpen, Building2, ShoppingCart, Settings, Package, Boxes, Tag, Users } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -56,6 +57,12 @@ const MainLayout = () => {
                 <NavItem to="/dashboard" handleclick={onNavLinkClick}>
                     <Boxes size={18} /> Dashboard
                 </NavItem>
+                
+                {/* 2. เพิ่มเมนู Borrowing ตรงนี้ */}
+                <NavItem to="/borrowings" handleclick={onNavLinkClick}>
+                    <PackageOpen size={18} /> Borrowing
+                </NavItem>
+
                 <div>
                     <p className="px-3 py-2 text-slate-400 text-xs font-bold uppercase">Business</p>
                     <div className="space-y-1">
@@ -100,7 +107,7 @@ const MainLayout = () => {
                 <SidebarContent />
             </aside>
 
-            <div className="flex-1 flex flex-col max-h-screen"> {/* Ensure the main container doesn't exceed screen height */}
+            <div className="flex-1 flex flex-col max-h-screen">
                 <header className="bg-white shadow-sm flex justify-between items-center p-2 md:p-4">
                     <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsSidebarOpen(true)}>
                         <Menu className="h-6 w-6" />

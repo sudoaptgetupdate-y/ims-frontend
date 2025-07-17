@@ -29,41 +29,46 @@ export default function InventoryPage() {
     const currentUser = useAuthStore((state) => state.user);
     const canManage = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN';
 
-    // Hook สำหรับดึงข้อมูลหลักของหน้า (Inventory Items)
     const { 
         data: inventoryItems, pagination, isLoading, searchTerm, filters,
         handleSearchChange, handlePageChange, handleItemsPerPageChange, handleFilterChange, refreshData 
     } = usePaginatedFetch("http://localhost:5001/api/inventory-items", 10, { status: "All" });
     
-    // State สำหรับจัดการ Dialog และฟอร์ม
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [formData, setFormData] = useState(initialFormData);
     const [editingItemId, setEditingItemId] = useState(null);
     const [isMacRequired, setIsMacRequired] = useState(true);
     const [isSerialRequired, setIsSerialRequired] = useState(true);
-    const [selectedModelInfo, setSelectedModelInfo] = useState(null); // State สำหรับเก็บข้อมูล Model ที่เลือก
+    const [selectedModelInfo, setSelectedModelInfo] = useState(null);
 
+    // === จุดที่แก้ไข 1: เพิ่มสถานะ BORROWED ใน getStatusVariant ===
     const getStatusVariant = (status) => {
-        const variants = { IN_STOCK: 'default', SOLD: 'secondary', RESERVED: 'outline', DEFECTIVE: 'destructive' };
+        const variants = { 
+            IN_STOCK: 'default', 
+            SOLD: 'secondary', 
+            RESERVED: 'outline', 
+            DEFECTIVE: 'destructive',
+            BORROWED: 'default' // ใช้สีเดียวกับ IN_STOCK หรือเปลี่ยนเป็นสีอื่นได้
+        };
         return variants[status] || 'secondary';
     };
     
     const openDialog = (item = null) => {
-        if (item) { // Edit Mode
+        if (item) {
             setIsEditMode(true);
             setEditingItemId(item.id);
             setFormData({
                 serialNumber: item.serialNumber, macAddress: item.macAddress || '',
                 productModelId: item.productModelId, status: item.status,
             });
-            setSelectedModelInfo(item.productModel); // ตั้งค่าข้อมูล Model เริ่มต้นสำหรับ Combobox
+            setSelectedModelInfo(item.productModel);
             setIsMacRequired(item.productModel.category.requiresMacAddress);
             setIsSerialRequired(item.productModel.category.requiresSerialNumber);
-        } else { // Add Mode
+        } else {
             setIsEditMode(false);
             setFormData(initialFormData);
-            setSelectedModelInfo(null); // Reset ค่าเมื่อเป็นการ Add ใหม่
+            setSelectedModelInfo(null);
             setIsMacRequired(true);
             setIsSerialRequired(true);
         }
@@ -72,7 +77,6 @@ export default function InventoryPage() {
 
     const handleInputChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value });
 
-    // Handler สำหรับรับค่าจาก ProductModelCombobox
     const handleModelSelect = (model) => {
         if (model) {
             setFormData(prev => ({ ...prev, productModelId: model.id }));
@@ -143,6 +147,7 @@ export default function InventoryPage() {
                         onChange={(e) => handleSearchChange(e.target.value)}
                         className="flex-grow"
                     />
+                    {/* === จุดที่แก้ไข 2: เพิ่มสถานะ BORROWED ใน Filter === */}
                     <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
                         <SelectTrigger className="w-full sm:w-[180px]">
                             <SelectValue placeholder="Filter by Status..." />
@@ -151,13 +156,14 @@ export default function InventoryPage() {
                             <SelectItem value="All">All Statuses</SelectItem>
                             <SelectItem value="IN_STOCK">In Stock</SelectItem>
                             <SelectItem value="SOLD">Sold</SelectItem>
+                            <SelectItem value="BORROWED">Borrowed</SelectItem> 
                             <SelectItem value="RESERVED">Reserved</SelectItem>
                             <SelectItem value="DEFECTIVE">Defective</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
-    <table className="w-full text-left text-sm">
+                    <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2 text-left">Serial Number</th>
@@ -181,27 +187,33 @@ export default function InventoryPage() {
                                         <td className="p-2">{item.addedBy.name}</td>
                                         <td className="p-2">
                                             <div className="flex items-center justify-center gap-2">
-                                                {canManage && (
-                                                    <>
-                                                        <Button variant="outline" size="sm" className="w-20" onClick={() => openDialog(item)}>Edit</Button>
-                                                        {item.status === 'IN_STOCK' && (
-                                                            <Button size="sm" className="w-20 bg-green-600 hover:bg-green-700" onClick={() => handleSellItem(item)}>
-                                                                Sell
-                                                            </Button>
-                                                        )}
-                                                        <AlertDialog>
-                                                            <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="w-20">Delete</Button></AlertDialogTrigger>
-                                                            <AlertDialogContent>
-                                                                <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the item: <strong>{item.serialNumber}</strong>.</AlertDialogDescription></AlertDialogHeader>
-                                                                <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(item.id)}>Continue</AlertDialogAction></AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
-                                                    </>
+                                                {/* === จุดที่แก้ไข 3: เพิ่มเงื่อนไขแสดงปุ่มตามสถานะ === */}
+                                                {canManage && item.status !== 'SOLD' && item.status !== 'BORROWED' && (
+                                                    <Button variant="outline" size="sm" className="w-20" onClick={() => openDialog(item)}>Edit</Button>
+                                                )}
+                                                {item.status === 'IN_STOCK' && (
+                                                    <Button size="sm" className="w-20 bg-green-600 hover:bg-green-700" onClick={() => handleSellItem(item)}>
+                                                        Sell
+                                                    </Button>
                                                 )}
                                                 {item.status === 'SOLD' && item.saleId && (
                                                     <Button variant="secondary" size="sm" className="w-20" onClick={() => navigate(`/sales/${item.saleId}`)}>
                                                         Detail
                                                     </Button>
+                                                )}
+                                                {item.status === 'BORROWED' && item.borrowingId && (
+                                                    <Button variant="secondary" size="sm" className="w-20" onClick={() => navigate(`/borrowings/${item.borrowingId}`)}>
+                                                        Detail
+                                                    </Button>
+                                                )}
+                                                {canManage && item.status !== 'SOLD' && item.status !== 'BORROWED' && (
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="w-20">Delete</Button></AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the item: <strong>{item.serialNumber}</strong>.</AlertDialogDescription></AlertDialogHeader>
+                                                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(item.id)}>Continue</AlertDialogAction></AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
                                                 )}
                                             </div>
                                         </td>
@@ -281,6 +293,7 @@ export default function InventoryPage() {
                                     <SelectContent>
                                         <SelectItem value="IN_STOCK">In Stock</SelectItem>
                                         <SelectItem value="SOLD">Sold</SelectItem>
+                                        <SelectItem value="BORROWED">Borrowed</SelectItem>
                                         <SelectItem value="RESERVED">Reserved</SelectItem>
                                         <SelectItem value="DEFECTIVE">Defective</SelectItem>
                                     </SelectContent>

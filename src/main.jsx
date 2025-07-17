@@ -27,6 +27,9 @@ import UserManagementPage from './pages/UserManagementPage.jsx';
 import EditSalePage from './pages/EditSalePage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import ChangePasswordPage from './pages/ChangePasswordPage.jsx';
+import BorrowingPage from './pages/BorrowingPage.jsx';
+import CreateBorrowingPage from './pages/CreateBorrowingPage.jsx';
+import BorrowingDetailPage from './pages/BorrowingDetailPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -71,6 +74,18 @@ const router = createBrowserRouter([
                 path: 'sales',
                 element: <SalePage />
               },
+              {
+                path: 'borrowings',
+                element: <BorrowingPage />
+              },
+              {
+                path: 'borrowings/new',
+                element: <CreateBorrowingPage />
+              },
+              {
+                path: 'borrowings/:borrowingId',
+                element: <BorrowingDetailPage />
+            },
               {
                 path: 'sales/new',
                 element: <CreateSalePage />
