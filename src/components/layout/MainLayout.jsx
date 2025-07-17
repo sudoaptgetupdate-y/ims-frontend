@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-// 1. เพิ่มไอคอน PackageOpen เข้ามา
 import { LogOut, Menu, X, UserCircle, User, PackageOpen, Building2, ShoppingCart, Settings, Package, Boxes, Tag, Users } from "lucide-react";
 import {
     DropdownMenu,
@@ -15,7 +14,6 @@ import {
 import useAuthStore from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 
-// คอมโพเนนต์สำหรับรายการเมนูแต่ละอันเพื่อลดการเขียนโค้ดซ้ำ
 const NavItem = ({ to, children, handleclick }) => (
     <NavLink
         to={to}
@@ -33,9 +31,11 @@ const MainLayout = () => {
     const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+    // **จุดที่แก้ไขสำคัญ**
+    // ทำให้ฟังก์ชันนี้มีหน้าที่เพียงอย่างเดียวคือ "เปลี่ยน State"
+    // ไม่ต้องสั่ง navigate เอง เพราะ ProtectedRoute จะจัดการให้โดยอัตโนมัติ
     const handleLogout = () => {
         logout();
-        navigate('/login');
     };
 
     const onNavLinkClick = () => {
