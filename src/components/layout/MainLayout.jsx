@@ -57,16 +57,12 @@ const MainLayout = () => {
                 <NavItem to="/dashboard" handleclick={onNavLinkClick}>
                     <Boxes size={18} /> Dashboard
                 </NavItem>
-                
-                {/* 2. เพิ่มเมนู Borrowing ตรงนี้ */}
-                <NavItem to="/borrowings" handleclick={onNavLinkClick}>
-                    <PackageOpen size={18} /> Borrowing
-                </NavItem>
 
                 <div>
                     <p className="px-3 py-2 text-slate-400 text-xs font-bold uppercase">Business</p>
                     <div className="space-y-1">
                         <NavItem to="/sales" handleclick={onNavLinkClick}><ShoppingCart size={18} /> Sales</NavItem>
+                        <NavItem to="/borrowings" handleclick={onNavLinkClick}><ShoppingCart size={18} /> Borrowing</NavItem>
                         <NavItem to="/customers" handleclick={onNavLinkClick}><Users size={18} /> Customers</NavItem>
                     </div>
                 </div>

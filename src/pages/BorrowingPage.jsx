@@ -15,7 +15,6 @@ export default function BorrowingPage() {
     const { user: currentUser } = useAuthStore((state) => state);
     const canManage = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN';
 
-    // ใช้ Hook เดิมได้เลย แค่เปลี่ยน API endpoint
     const { 
         data: borrowings, 
         pagination, 
@@ -61,8 +60,8 @@ export default function BorrowingPage() {
                                 <th className="p-2">Borrow Date</th>
                                 <th className="p-2">Due Date</th>
                                 <th className="p-2">Status</th>
+                                <th className="p-2">Item Status</th>
                                 <th className="p-2">Approved By</th>
-                                <th className="p-2 text-center">Items</th>
                                 <th className="p-2 text-center">Actions</th>
                             </tr>
                         </thead>
@@ -75,8 +74,9 @@ export default function BorrowingPage() {
                                     <td className="p-2">{new Date(b.borrowDate).toLocaleDateString()}</td>
                                     <td className="p-2">{b.dueDate ? new Date(b.dueDate).toLocaleDateString() : 'N/A'}</td>
                                     <td className="p-2"><Badge variant={getStatusVariant(b.status)}>{b.status}</Badge></td>
+                                    {/* === จุดที่แก้ไข: เปลี่ยนมาใช้ totalItemCount และ returnedItemCount === */}
+                                    <td className="p-2">{b.returnedItemCount}/{b.totalItemCount} Returned</td>
                                     <td className="p-2">{b.approvedBy.name}</td>
-                                    <td className="p-2 text-center">{b.items.length}</td>
                                     <td className="p-2 text-center">
                                         <Button variant="outline" size="sm" onClick={() => navigate(`/borrowings/${b.id}`)}>
                                             Details

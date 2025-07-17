@@ -7,57 +7,51 @@ import useAuthStore from "@/store/authStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ArrowLeft, ShoppingCart, PackageOpen } from "lucide-react";
+import { ArrowLeft, ShoppingCart, PackageOpen, Package, History } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 export default function CustomerHistoryPage() {
     const { id: customerId } = useParams();
     const navigate = useNavigate();
     const token = useAuthStore((state) => state.token);
+    
     const [history, setHistory] = useState([]);
+    const [summary, setSummary] = useState(null);
+    
     const [customer, setCustomer] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('ALL');
-
+    
     useEffect(() => {
-        const fetchHistory = async () => {
+        const fetchData = async () => {
             if (!customerId || !token) return;
             try {
                 setLoading(true);
-                const [historyRes, customerRes] = await Promise.all([
-                    axios.get(`http://localhost:5001/api/customers/${customerId}/history`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    }),
-                    axios.get(`http://localhost:5001/api/customers/${customerId}`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    })
+                const [historyRes, summaryRes, customerRes] = await Promise.all([
+                    axios.get(`http://localhost:5001/api/customers/${customerId}/history`, { headers: { Authorization: `Bearer ${token}` } }),
+                    axios.get(`http://localhost:5001/api/customers/${customerId}/summary`, { headers: { Authorization: `Bearer ${token}` } }),
+                    axios.get(`http://localhost:5001/api/customers/${customerId}`, { headers: { Authorization: `Bearer ${token}` } })
                 ]);
                 setHistory(historyRes.data);
+                setSummary(summaryRes.data);
                 setCustomer(customerRes.data);
             } catch (error) {
-                toast.error("Failed to fetch customer history.");
+                toast.error("Failed to fetch customer data.");
                 navigate("/customers");
             } finally {
                 setLoading(false);
             }
         };
-        fetchHistory();
+        fetchData();
     }, [customerId, token, navigate]);
 
-    const filteredHistory = history.filter(item => {
-        if (filter === 'ALL') return true;
-        if (filter === 'SALE') return item.type === 'SALE';
-        if (filter === 'BORROWING') return item.type === 'BORROWING';
-        return true;
-    });
-
-    if (loading) return <p>Loading history...</p>;
+    if (loading) return <p>Loading customer data...</p>;
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold">Transaction History</h1>
+                    <h1 className="text-2xl font-bold">Customer Details</h1>
                     <p className="text-muted-foreground">For Customer: {customer?.name || '...'}</p>
                 </div>
                 <Button variant="outline" onClick={() => navigate('/customers')}>
@@ -66,28 +60,24 @@ export default function CustomerHistoryPage() {
                 </Button>
             </div>
 
-            <Tabs defaultValue="ALL" onValueChange={setFilter} className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="ALL">All Transactions</TabsTrigger>
-                    <TabsTrigger value="SALE">Sales History</TabsTrigger>
-                    <TabsTrigger value="BORROWING">Borrowing History</TabsTrigger>
+            <Tabs defaultValue="history" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="history">Transaction History</TabsTrigger>
+                    <TabsTrigger value="summary">Asset Summary</TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="ALL">
-                    <HistoryList history={filteredHistory} />
+                <TabsContent value="history">
+                    <HistoryList transactions={history} />
                 </TabsContent>
-                <TabsContent value="SALE">
-                    <HistoryList history={filteredHistory} />
-                </TabsContent>
-                <TabsContent value="BORROWING">
-                    <HistoryList history={filteredHistory} />
+                <TabsContent value="summary">
+                    <SummaryView summary={summary} />
                 </TabsContent>
             </Tabs>
         </div>
     );
 }
 
-const HistoryList = ({ history }) => {
+const HistoryList = ({ transactions }) => {
     const navigate = useNavigate();
 
     const getTransactionIcon = (type) => {
@@ -102,13 +92,13 @@ const HistoryList = ({ history }) => {
       return '#';
     };
 
-    if (history.length === 0) {
-        return <p className="text-center py-8 text-muted-foreground">No transaction history found for this filter.</p>
+    if (transactions.length === 0) {
+        return <p className="text-center py-8 text-muted-foreground">No transaction history found.</p>
     }
 
     return (
         <div className="space-y-4 pt-4">
-            {history.map((item) => (
+            {transactions.map((item) => (
                 <Card key={item.id}>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <div className="flex items-center gap-3">
@@ -130,3 +120,59 @@ const HistoryList = ({ history }) => {
         </div>
     );
 };
+
+const SummaryView = ({ summary }) => {
+    if (!summary) return <p className="text-center py-8">Loading summary...</p>;
+
+    return (
+        <div className="space-y-6 pt-4">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><PackageOpen className="text-blue-600"/>Currently Borrowed Items ({summary.currentlyBorrowedItems.length})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {summary.currentlyBorrowedItems.length > 0 ? (
+                        <ul className="list-disc list-inside space-y-1">
+                            {summary.currentlyBorrowedItems.map(item => (
+                                <li key={`current-${item.id}`}>{item.productModel.modelNumber} (S/N: {item.serialNumber || 'N/A'}) - Due: {item.dueDate ? new Date(item.dueDate).toLocaleDateString() : 'N/A'}</li>
+                            ))}
+                        </ul>
+                    ) : <p className="text-sm text-muted-foreground">No items currently borrowed.</p>}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><History className="text-gray-500"/>Returned Items History ({summary.returnedItemsHistory.length})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {summary.returnedItemsHistory.length > 0 ? (
+                        <ul className="list-disc list-inside space-y-1">
+                            {summary.returnedItemsHistory.map(item => (
+                                <li key={`returned-${item.id}`}>
+                                    {item.productModel.modelNumber} (S/N: {item.serialNumber || 'N/A'})
+                                    - Returned on: {item.returnDate ? new Date(item.returnDate).toLocaleDateString() : 'N/A'}
+                                </li>
+                            ))}
+                        </ul>
+                    ) : <p className="text-sm text-muted-foreground">No returned items history.</p>}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><ShoppingCart className="text-green-600"/>Purchase History ({summary.purchaseHistory.length})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {summary.purchaseHistory.length > 0 ? (
+                        <ul className="list-disc list-inside space-y-1">
+                            {summary.purchaseHistory.map(item => (
+                                <li key={`purchased-${item.id}`}>{item.productModel.modelNumber} (S/N: {item.serialNumber || 'N/A'}) - Purchased on {new Date(item.transactionDate).toLocaleDateString()}</li>
+                            ))}
+                        </ul>
+                    ) : <p className="text-sm text-muted-foreground">No purchase history.</p>}
+                </CardContent>
+            </Card>
+        </div>
+    )
+}
