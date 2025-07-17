@@ -8,18 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // 1. Import Tabs
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ProfilePage() {
     const { user, token, login } = useAuthStore();
     
-    // State สำหรับฟอร์ม Profile
     const [name, setName] = useState('');
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [isProfileLoading, setIsProfileLoading] = useState(false);
 
-    // State สำหรับฟอร์ม Change Password
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -33,7 +31,6 @@ export default function ProfilePage() {
         }
     }, [user]);
 
-    // Handler สำหรับอัปเดต Profile
     const handleProfileSubmit = async (e) => {
         e.preventDefault();
         setIsProfileLoading(true);
@@ -51,7 +48,6 @@ export default function ProfilePage() {
         }
     };
 
-    // Handler สำหรับเปลี่ยนรหัสผ่าน
     const handlePasswordSubmit = async (e) => {
         e.preventDefault();
         if (newPassword !== confirmPassword) {
@@ -70,7 +66,6 @@ export default function ProfilePage() {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             toast.success(response.data.message);
-            // เคลียร์ฟอร์มรหัสผ่าน
             setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
@@ -82,14 +77,25 @@ export default function ProfilePage() {
     };
 
     return (
-        // 2. ใช้ Tabs เป็นตัวครอบหลัก
         <Tabs defaultValue="profile" className="max-w-2xl mx-auto">
             <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="profile">Profile Details</TabsTrigger>
-                <TabsTrigger value="password">Change Password</TabsTrigger>
+                {/* === ส่วนที่แก้ไข === */}
+                {/* เพิ่ม className ที่มี data-[state=active] เข้าไปใน TabsTrigger แต่ละอัน */}
+                <TabsTrigger 
+                    value="profile"
+                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow"
+                >
+                    Profile Details
+                </TabsTrigger>
+                <TabsTrigger 
+                    value="password"
+                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow"
+                >
+                    Change Password
+                </TabsTrigger>
+                {/* =================== */}
             </TabsList>
             
-            {/* 3. เนื้อหาของแท็บ Profile */}
             <TabsContent value="profile">
                 <Card>
                     <CardHeader>
@@ -108,7 +114,6 @@ export default function ProfilePage() {
                 </Card>
             </TabsContent>
 
-            {/* 4. เนื้อหาของแท็บ Change Password */}
             <TabsContent value="password">
                 <Card>
                     <CardHeader>

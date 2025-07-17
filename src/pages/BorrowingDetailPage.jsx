@@ -9,6 +9,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ArrowLeft, CheckSquare, Square } from "lucide-react";
+// 1. Import AlertDialog components
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function BorrowingDetailPage() {
     const { borrowingId } = useParams();
@@ -85,14 +97,7 @@ export default function BorrowingDetailPage() {
                     <div><p className="font-semibold">Borrow Date</p><p>{new Date(borrowing.borrowDate).toLocaleString()}</p></div>
                     <div><p className="font-semibold">Due Date</p><p>{borrowing.dueDate ? new Date(borrowing.dueDate).toLocaleDateString() : 'N/A'}</p></div>
                     <div><p className="font-semibold">Approved By</p><p>{borrowing.approvedBy.name}</p></div>
-                    
-                    {/* === จุดที่แก้ไข === */}
-                    <div>
-                        <p className="font-semibold">Status</p>
-                        <div><Badge>{borrowing.status}</Badge></div>
-                    </div>
-                    {/* ================= */}
-
+                    <div><p className="font-semibold">Status</p><div><Badge>{borrowing.status}</Badge></div></div>
                     {borrowing.returnDate && (
                          <div><p className="font-semibold">Return Date</p><p>{new Date(borrowing.returnDate).toLocaleString()}</p></div>
                     )}
@@ -119,9 +124,29 @@ export default function BorrowingDetailPage() {
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button onClick={handleReturnItems} disabled={selectedToReturn.length === 0}>
-                            Confirm Return ({selectedToReturn.length} items)
-                        </Button>
+                        {/* 2. แก้ไขปุ่มให้เป็น AlertDialog */}
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button disabled={selectedToReturn.length === 0}>
+                                    Confirm Return ({selectedToReturn.length} items)
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirm Return</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        You are about to return {selectedToReturn.length} item(s). This will change their status back to "IN_STOCK". Are you sure?
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleReturnItems}>
+                                        Continue
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                        {/* ============================= */}
                     </CardFooter>
                 </Card>
             )}

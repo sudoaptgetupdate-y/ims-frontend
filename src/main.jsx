@@ -27,6 +27,9 @@ import BorrowingPage from './pages/BorrowingPage.jsx';
 import CreateBorrowingPage from './pages/CreateBorrowingPage.jsx';
 import BorrowingDetailPage from './pages/BorrowingDetailPage.jsx';
 import CustomerHistoryPage from './pages/CustomerHistoryPage.jsx';
+import ActiveBorrowingsPage from './pages/ActiveBorrowingsPage.jsx';
+import CustomerReturnedHistoryPage from './pages/CustomerReturnedHistoryPage.jsx';
+import CustomerPurchaseHistoryPage from './pages/CustomerPurchaseHistoryPage.jsx';
 
 const router = createBrowserRouter([
   {
@@ -50,6 +53,15 @@ const router = createBrowserRouter([
               { path: 'categories', element: <CategoryPage /> },
               { path: 'customers', element: <CustomerPage /> },
               { path: 'customers/:id/history', element: <CustomerHistoryPage /> },
+              { path: 'customers/:id/active-borrowings', element: <ActiveBorrowingsPage />},
+               {
+                path: 'customers/:id/returned-history',
+                element: <CustomerReturnedHistoryPage />
+              },
+              {
+                path: 'customers/:id/purchase-history',
+                element: <CustomerPurchaseHistoryPage />
+              },
               { path: 'sales', element: <SalePage /> },
               { path: 'sales/new', element: <CreateSalePage /> },
               { path: 'sales/:saleId', element: <SaleDetailPage /> },
