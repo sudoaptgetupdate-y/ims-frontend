@@ -67,7 +67,7 @@ export default function CustomerReturnedHistoryPage() {
                         </thead>
                         <tbody>
                             {items.map(item => (
-                                <tr key={item.id} className="border-b">
+                                <tr key={`${item.id}-${item.transactionId}`} className="border-b">
                                     <td className="p-2">{item.productModel.modelNumber}</td>
                                     <td className="p-2">{item.serialNumber || 'N/A'}</td>
                                     <td className="p-2">{item.returnDate ? new Date(item.returnDate).toLocaleDateString() : 'N/A'}</td>
