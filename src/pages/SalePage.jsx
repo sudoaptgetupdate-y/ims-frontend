@@ -30,15 +30,15 @@ export default function SalePage() {
         refreshData 
     } = usePaginatedFetch("http://localhost:5001/api/sales");
 
-    const handleDeleteSale = async (saleId) => {
+    const handleVoidSale = async (saleId) => {
         try {
-            await axios.delete(`http://localhost:5001/api/sales/${saleId}`, {
+            await axios.patch(`http://localhost:5001/api/sales/${saleId}/void`, {}, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            toast.success("Sale record deleted successfully!");
+            toast.success("Sale record has been voided!");
             refreshData();
         } catch (error) {
-            toast.error(error.response?.data?.error || "Failed to delete sale record.");
+            toast.error(error.response?.data?.error || "Failed to void sale record.");
         }
     };
 
@@ -91,18 +91,18 @@ export default function SalePage() {
                                             {isSuperAdmin && (
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
-                                                        <Button variant="destructive" size="sm" className="w-24">Delete</Button>
+                                                        <Button variant="destructive" size="sm" className="w-24">Void</Button>
                                                     </AlertDialogTrigger>
                                                     <AlertDialogContent>
                                                         <AlertDialogHeader>
-                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                            <AlertDialogTitle>Are you sure you want to void this sale?</AlertDialogTitle>
                                                             <AlertDialogDescription>
-                                                                This will delete the sale record (ID: {sale.id}). All sold items will be returned to stock. This action cannot be undone.
+                                                                This will void the sale record (ID: {sale.id}). All sold items will be returned to stock. This action is irreversible.
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
                                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDeleteSale(sale.id)}>Continue</AlertDialogAction>
+                                                            <AlertDialogAction onClick={() => handleVoidSale(sale.id)}>Continue</AlertDialogAction>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
