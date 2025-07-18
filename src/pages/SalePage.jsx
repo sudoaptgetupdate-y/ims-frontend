@@ -11,6 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
+import { Badge } from "@/components/ui/badge";
 
 export default function SalePage() {
     const navigate = useNavigate();
@@ -19,16 +20,21 @@ export default function SalePage() {
     const canManage = currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN';
     const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
 
+    // --- START: ส่วนที่แก้ไข ---
+    // เปลี่ยน initialFilters จาก { status: "COMPLETED" } เป็น { status: "All" }
     const { 
         data: sales, 
         pagination, 
         isLoading, 
         searchTerm,
+        filters,
         handleSearchChange, 
         handlePageChange, 
         handleItemsPerPageChange,
+        handleFilterChange,
         refreshData 
-    } = usePaginatedFetch("http://localhost:5001/api/sales");
+    } = usePaginatedFetch("http://localhost:5001/api/sales", 10, { status: "All" });
+    // --- END ---
 
     const handleVoidSale = async (saleId) => {
         try {
@@ -53,12 +59,23 @@ export default function SalePage() {
                 )}
             </CardHeader>
             <CardContent>
-                <div className="mb-4">
+                <div className="flex flex-col sm:flex-row gap-4 mb-4">
                     <Input
                         placeholder="Search by Customer or Seller Name..."
                         value={searchTerm}
                         onChange={(e) => handleSearchChange(e.target.value)}
+                        className="flex-grow"
                     />
+                    <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+                        <SelectTrigger className="w-full sm:w-[180px]">
+                            <SelectValue placeholder="Filter by Status..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Statuses</SelectItem>
+                            <SelectItem value="COMPLETED">Completed</SelectItem>
+                            <SelectItem value="VOIDED">Voided</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
                     <table className="w-full text-sm whitespace-nowrap">
@@ -66,7 +83,7 @@ export default function SalePage() {
                             <tr className="border-b">
                                 <th className="p-2">Customer</th>
                                 <th className="p-2">Sale Date</th>
-                                <th className="p-2">Sold By</th>
+                                <th className="p-2">Status</th>
                                 <th className="p-2 text-center">Items</th>
                                 <th className="p-2 text-right">Total (inc. VAT)</th>
                                 <th className="p-2 text-center">Actions</th>
@@ -79,19 +96,24 @@ export default function SalePage() {
                                 <tr key={sale.id} className="border-b">
                                     <td className="p-2">{sale.customer.name}</td>
                                     <td className="p-2">{new Date(sale.saleDate).toLocaleString()}</td>
-                                    <td className="p-2">{sale.soldBy.name}</td>
+                                    <td className="p-2">
+                                        <Badge variant={sale.status === 'VOIDED' ? "destructive" : "default"}>
+                                            {sale.status}
+                                        </Badge>
+                                    </td>
                                     <td className="p-2 text-center">{sale.itemsSold.length}</td>
                                     <td className="p-2 text-right">{sale.total.toLocaleString('en-US')} THB</td>
                                     <td className="p-2">
                                         <div className="flex items-center justify-center gap-2">
                                             <Button variant="outline" size="sm" className="w-24" onClick={() => navigate(`/sales/${sale.id}`)}>View Details</Button>
+                                            
                                             {canManage && (
-                                                <Button variant="outline" size="sm" className="w-24" onClick={() => navigate(`/sales/edit/${sale.id}`)}>Edit</Button>
+                                                <Button variant="outline" size="sm" className="w-24" onClick={() => navigate(`/sales/edit/${sale.id}`)} disabled={sale.status !== 'COMPLETED'}>Edit</Button>
                                             )}
                                             {isSuperAdmin && (
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
-                                                        <Button variant="destructive" size="sm" className="w-24">Void</Button>
+                                                        <Button variant="destructive" size="sm" className="w-24" disabled={sale.status !== 'COMPLETED'}>Void</Button>
                                                     </AlertDialogTrigger>
                                                     <AlertDialogContent>
                                                         <AlertDialogHeader>

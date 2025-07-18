@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { LogOut, Menu, X, UserCircle, User, PackageOpen, Building2, ShoppingCart, Settings, Package, Boxes, Tag, Users } from "lucide-react";
+// --- START: ส่วนที่แก้ไข 1: เพิ่ม ArrowRightLeft และลบ PackageOpen ที่ไม่ได้ใช้ออก ---
+import { LogOut, Menu, X, UserCircle, User, ArrowRightLeft, Building2, ShoppingCart, Settings, Package, Boxes, Tag, Users } from "lucide-react";
+// --- END ---
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -14,6 +16,7 @@ import {
 import useAuthStore from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 
+// คอมโพเนนต์สำหรับรายการเมนูแต่ละอันเพื่อลดการเขียนโค้ดซ้ำ
 const NavItem = ({ to, children, handleclick }) => (
     <NavLink
         to={to}
@@ -31,9 +34,6 @@ const MainLayout = () => {
     const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    // **จุดที่แก้ไขสำคัญ**
-    // ทำให้ฟังก์ชันนี้มีหน้าที่เพียงอย่างเดียวคือ "เปลี่ยน State"
-    // ไม่ต้องสั่ง navigate เอง เพราะ ProtectedRoute จะจัดการให้โดยอัตโนมัติ
     const handleLogout = () => {
         logout();
     };
@@ -62,7 +62,9 @@ const MainLayout = () => {
                     <p className="px-3 py-2 text-slate-400 text-xs font-bold uppercase">Business</p>
                     <div className="space-y-1">
                         <NavItem to="/sales" handleclick={onNavLinkClick}><ShoppingCart size={18} /> Sales</NavItem>
-                        <NavItem to="/borrowings" handleclick={onNavLinkClick}><ShoppingCart size={18} /> Borrowing</NavItem>
+                        {/* --- START: ส่วนที่แก้ไข 2: เปลี่ยนไอคอน --- */}
+                        <NavItem to="/borrowings" handleclick={onNavLinkClick}><ArrowRightLeft size={18} /> Borrowing</NavItem>
+                        {/* --- END --- */}
                         <NavItem to="/customers" handleclick={onNavLinkClick}><Users size={18} /> Customers</NavItem>
                     </div>
                 </div>

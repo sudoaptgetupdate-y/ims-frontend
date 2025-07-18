@@ -50,10 +50,13 @@ const HistoryList = ({ transactions }) => {
     );
 };
 
+// --- START: ส่วนที่แก้ไข ---
 const SummaryView = ({ summary }) => {
     const navigate = useNavigate();
     const { id: customerId } = useParams();
+
     if (!summary) return <p className="text-center py-8">Loading summary...</p>;
+
     return (
         <div className="space-y-6 pt-4">
             <Card 
@@ -72,7 +75,10 @@ const SummaryView = ({ summary }) => {
                     {summary.currentlyBorrowedItems.length > 0 ? (
                         <ul className="list-disc list-inside space-y-1">
                             {summary.currentlyBorrowedItems.slice(0, 5).map(item => (
-                                <li key={`current-${item.id}`}>{item.productModel.modelNumber} (S/N: {item.serialNumber || 'N/A'})</li>
+                                // สร้าง key ที่ไม่ซ้ำกันโดยใช้ borrowDate
+                                <li key={`current-${item.id}-${item.borrowDate}`}>
+                                    {item.productModel.modelNumber} (S/N: {item.serialNumber || 'N/A'})
+                                </li>
                             ))}
                         </ul>
                     ) : <p className="text-sm text-muted-foreground">No items currently borrowed.</p>}
@@ -95,8 +101,9 @@ const SummaryView = ({ summary }) => {
                     {summary.returnedItemsHistory.length > 0 ? (
                         <ul className="list-disc list-inside space-y-1">
                             {summary.returnedItemsHistory.slice(0, 5).map(item => (
-                                <li key={`returned-${item.id}`}>
-                                    {item.productModel.modelNumber} (S/N: {item.serialNumber || 'N/A'}) - Returned on: {item.returnDate ? new Date(item.returnDate).toLocaleDateString() : 'N/A'}
+                                // สร้าง key ที่ไม่ซ้ำกันโดยใช้ returnedAt
+                                <li key={`returned-${item.id}-${item.returnedAt}`}>
+                                    {item.productModel.modelNumber} (S/N: {item.serialNumber || 'N/A'}) - Returned on: {item.returnedAt ? new Date(item.returnedAt).toLocaleDateString() : 'N/A'}
                                 </li>
                             ))}
                         </ul>
@@ -120,7 +127,10 @@ const SummaryView = ({ summary }) => {
                     {summary.purchaseHistory.length > 0 ? (
                         <ul className="list-disc list-inside space-y-1">
                             {summary.purchaseHistory.slice(0, 5).map(item => (
-                                <li key={`purchased-${item.id}`}>{item.productModel.modelNumber} (S/N: {item.serialNumber || 'N/A'}) - Purchased on {new Date(item.transactionDate).toLocaleDateString()}</li>
+                                // สร้าง key ที่ไม่ซ้ำกันโดยใช้ transactionId
+                                <li key={`purchased-${item.id}-${item.transactionId}`}>
+                                    {item.productModel.modelNumber} (S/N: {item.serialNumber || 'N/A'}) - Purchased on {new Date(item.transactionDate).toLocaleDateString()}
+                                </li>
                             ))}
                         </ul>
                     ) : <p className="text-sm text-muted-foreground">No purchase history.</p>}
@@ -129,6 +139,8 @@ const SummaryView = ({ summary }) => {
         </div>
     )
 }
+// --- END ---
+
 
 export default function CustomerHistoryPage() {
     const { id: customerId } = useParams();
@@ -136,17 +148,13 @@ export default function CustomerHistoryPage() {
     const location = useLocation();
     const token = useAuthStore((state) => state.token);
     
-    // --- START: ส่วนที่แก้ไข ---
-    // 1. ตั้งค่าเริ่มต้นให้เป็น 'history' เสมอ
-    const [activeTab, setActiveTab] = useState('history');
-    // --- END ---
+    const [activeTab, setActiveTab] = useState(location.state?.defaultTab || 'history');
     
     const [history, setHistory] = useState([]);
     const [summary, setSummary] = useState(null);
     const [customer, setCustomer] = useState(null);
     const [loading, setLoading] = useState(true);
     
-    // 2. ใช้ useEffect เพื่ออัปเดต tab ตาม location.state ที่ส่งมา
     useEffect(() => {
         if (location.state?.defaultTab) {
             setActiveTab(location.state.defaultTab);

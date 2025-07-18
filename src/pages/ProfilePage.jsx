@@ -27,7 +27,10 @@ export default function ProfilePage() {
         if (user) {
             setName(user.name || '');
             setUsername(user.username || '');
-            setEmail(user.email || '');
+            // --- START: ส่วนที่แก้ไข ---
+            // ใช้ optional chaining (`?.`) เพื่อความปลอดภัย
+            setEmail(user?.email || '');
+            // --- END ---
         }
     }, [user]);
 
@@ -79,8 +82,6 @@ export default function ProfilePage() {
     return (
         <Tabs defaultValue="profile" className="max-w-2xl mx-auto">
             <TabsList className="grid w-full grid-cols-2">
-                {/* === ส่วนที่แก้ไข === */}
-                {/* เพิ่ม className ที่มี data-[state=active] เข้าไปใน TabsTrigger แต่ละอัน */}
                 <TabsTrigger 
                     value="profile"
                     className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow"
@@ -93,7 +94,6 @@ export default function ProfilePage() {
                 >
                     Change Password
                 </TabsTrigger>
-                {/* =================== */}
             </TabsList>
             
             <TabsContent value="profile">
