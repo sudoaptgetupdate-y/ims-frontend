@@ -7,6 +7,10 @@ export default {
   ],
   theme: {
   	extend: {
+      fontFamily: {
+		sans: ['"Noto Sans"', '"Noto Sans Thai"', 'sans-serif'],
+        sarabun: ['"Sarabun"', 'sans-serif'],
+      },
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',

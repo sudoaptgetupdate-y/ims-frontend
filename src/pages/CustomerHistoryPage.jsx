@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { ArrowLeft, ShoppingCart, PackageOpen, Package, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-// --- START: ส่วนที่แก้ไข: สร้าง Card สรุปข้อมูล (Stat Cards) ---
 const StatCard = ({ title, value, icon, description, onClick }) => (
     <Card onClick={onClick} className={onClick ? "cursor-pointer hover:border-primary transition-colors" : ""}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -23,7 +22,6 @@ const StatCard = ({ title, value, icon, description, onClick }) => (
         </CardContent>
     </Card>
 );
-// --- END ---
 
 export default function CustomerHistoryPage() {
     const { id: customerId } = useParams();
@@ -40,7 +38,6 @@ export default function CustomerHistoryPage() {
             if (!customerId || !token) return;
             try {
                 setLoading(true);
-                // --- START: ส่วนที่แก้ไข: เรียก API พร้อมกันเพื่อความรวดเร็ว ---
                 const [historyRes, summaryRes, customerRes] = await Promise.all([
                     axios.get(`http://localhost:5001/api/customers/${customerId}/history`, { headers: { Authorization: `Bearer ${token}` } }),
                     axios.get(`http://localhost:5001/api/customers/${customerId}/summary`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -49,7 +46,6 @@ export default function CustomerHistoryPage() {
                 setHistory(historyRes.data);
                 setSummary(summaryRes.data);
                 setCustomer(customerRes.data);
-                // --- END ---
             } catch (error) {
                 toast.error("Failed to fetch customer data.");
                 navigate("/customers");
@@ -63,10 +59,16 @@ export default function CustomerHistoryPage() {
     if (loading || !summary) return <p>Loading customer data...</p>;
 
     const getTransactionTypeStyle = (type) => {
-        if (type === 'SALE') return { variant: 'success', icon: <ShoppingCart className="h-4 w-4 text-muted-foreground" />, label: 'Sale' };
-        if (type === 'BORROWING') return { variant: 'warning', icon: <PackageOpen className="h-4 w-4 text-muted-foreground" />, label: 'Borrow' };
-        return { variant: 'secondary', icon: null, label: 'Unknown' };
+        if (type === 'SALE') return { variant: 'success', label: 'Sale' };
+        if (type === 'BORROWING') return { variant: 'warning', label: 'Borrow' };
+        return { variant: 'secondary', label: 'Unknown' };
     };
+
+    const getBorrowStatusVariant = (status) => {
+        if (status === 'RETURNED') return 'secondary';
+        if (status === 'OVERDUE') return 'destructive';
+        return 'warning';
+    }
 
     return (
         <div className="space-y-6">
@@ -83,7 +85,6 @@ export default function CustomerHistoryPage() {
                 </Button>
             </div>
 
-            {/* --- START: ส่วนที่แก้ไข: แสดงผล Stat Cards --- */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <StatCard 
                     title="Items Purchased"
@@ -107,9 +108,7 @@ export default function CustomerHistoryPage() {
                     onClick={() => navigate(`/customers/${customerId}/returned-history`)}
                 />
             </div>
-             {/* --- END --- */}
             
-            {/* --- START: ส่วนที่แก้ไข: แสดงผลประวัติธุรกรรมในตารางเดียว --- */}
             <Card>
                 <CardHeader>
                     <CardTitle>Transaction Log</CardTitle>
@@ -118,9 +117,16 @@ export default function CustomerHistoryPage() {
                 <CardContent>
                     <div className="border rounded-lg overflow-x-auto">
                         <table className="w-full text-sm whitespace-nowrap">
+                            <colgroup>
+                                <col className="w-[120px]" />
+                                <col className="w-[30%]" />
+                                <col className="w-[10%]" />
+                                <col className="w-[30%]" />
+                                <col className="w-[120px]" />
+                            </colgroup>
                             <thead>
                                 <tr className="border-b">
-                                    <th className="p-2 text-left">Type</th>
+                                    <th className="p-2 text-center">Type</th>
                                     <th className="p-2 text-left">Date</th>
                                     <th className="p-2 text-center">Items</th>
                                     <th className="p-2 text-right">Total / Status</th>
@@ -134,15 +140,17 @@ export default function CustomerHistoryPage() {
                                     const style = getTransactionTypeStyle(item.type);
                                     return (
                                         <tr key={item.id} className="border-b">
-                                            <td className="p-2 text-left">
-                                                <Badge variant={style.variant}>{style.label}</Badge>
+                                            <td className="p-2 text-center">
+                                                {/* --- START: ส่วนที่แก้ไข --- */}
+                                                <Badge variant={style.variant} className="w-20 justify-center">{style.label}</Badge>
+                                                {/* --- END --- */}
                                             </td>
                                             <td className="p-2 text-left">{new Date(item.date).toLocaleString()}</td>
                                             <td className="p-2 text-center">{item.itemCount}</td>
                                             <td className="p-2 text-right">
                                                 {item.type === 'SALE' 
                                                     ? `${item.details.total.toLocaleString('en-US')} THB`
-                                                    : <Badge variant={item.details.status === 'RETURNED' ? 'secondary' : 'warning'}>{item.details.status}</Badge>
+                                                    : <Badge variant={getBorrowStatusVariant(item.details.status)} className="w-24 justify-center">{item.details.status}</Badge>
                                                 }
                                             </td>
                                             <td className="p-2 text-center">
@@ -162,7 +170,6 @@ export default function CustomerHistoryPage() {
                     </div>
                 </CardContent>
             </Card>
-            {/* --- END --- */}
         </div>
     );
 }

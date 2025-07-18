@@ -12,7 +12,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
-import { PlusCircle } from "lucide-react"; // --- เพิ่มการ import ---
+import { PlusCircle } from "lucide-react";
+
+const SkeletonRow = () => (
+    <tr className="border-b">
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2">
+            <div className="flex items-center justify-center gap-2">
+                <div className="h-8 w-20 bg-gray-200 rounded-md animate-pulse"></div>
+                <div className="h-8 w-20 bg-gray-200 rounded-md animate-pulse"></div>
+            </div>
+        </td>
+    </tr>
+);
 
 const initialFormData = {
     modelNumber: "",
@@ -131,13 +147,11 @@ export default function ProductModelPage() {
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Product Model Management</CardTitle>
-                {/* --- START: ส่วนที่แก้ไข --- */}
                 {canManage && 
                     <Button onClick={() => openDialog()}>
-                        <PlusCircle className="mr-0 h-4 w-4" /> Add Product Model
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Product Model
                     </Button>
                 }
-                 {/* --- END --- */}
             </CardHeader>
             <CardContent>
                 <div className="mb-4">
@@ -147,17 +161,17 @@ export default function ProductModelPage() {
                     <table className="w-full text-left text-sm whitespace-nowrap">
                         <thead>
                             <tr className="border-b">
-                                <th className="p-2">Model Number</th>
-                                <th className="p-2">Description</th>
+                                <th className="p-2 text-left">Model Number</th>
+                                <th className="p-2 text-left">Description</th>
                                 <th className="p-2 text-right">Price</th>
-                                <th className="p-2">Category</th>
-                                <th className="p-2">Brand</th>
+                                <th className="p-2 text-left">Category</th>
+                                <th className="p-2 text-left">Brand</th>
                                 {canManage && <th className="p-2 text-center">Actions</th>}
                             </tr>
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td colSpan="6" className="text-center p-4">Loading...</td></tr>
+                                [...Array(pagination.itemsPerPage)].map((_, i) => <SkeletonRow key={i} />)
                             ) : productModels.map((model) => (
                                 <tr key={model.id} className="border-b">
                                     <td className="p-2">{model.modelNumber}</td>

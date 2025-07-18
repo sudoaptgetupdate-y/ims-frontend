@@ -1,77 +1,87 @@
 // src/main.jsx
 
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
-import './index.css'
+import React, { lazy, Suspense } from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App.jsx';
+import './index.css';
 
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 
-// Components & Pages
+// Components
 import ProtectedRoute from './components/auth/ProtectedRoute.jsx';
 import MainLayout from './components/layout/MainLayout.jsx';
 import LoginPage from './pages/LoginPage.jsx';
-import DashboardRedirect from './components/auth/DashboardRedirect.jsx';
-import CategoryPage from './pages/CategoryPage.jsx';
-import BrandPage from './pages/BrandPage.jsx';
-import CustomerPage from './pages/CustomerPage.jsx';
-import SalePage from './pages/SalePage.jsx';
-import CreateSalePage from './pages/CreateSalePage.jsx';
-import SaleDetailPage from './pages/SaleDetailPage.jsx';
-import ProductModelPage from './pages/ProductModelPage.jsx';
-import InventoryPage from './pages/InventoryPage.jsx';
-import UserManagementPage from './pages/UserManagementPage.jsx';
-import EditSalePage from './pages/EditSalePage.jsx';
-import ProfilePage from './pages/ProfilePage.jsx';
-import BorrowingPage from './pages/BorrowingPage.jsx';
-import CreateBorrowingPage from './pages/CreateBorrowingPage.jsx';
-import BorrowingDetailPage from './pages/BorrowingDetailPage.jsx';
-import CustomerHistoryPage from './pages/CustomerHistoryPage.jsx';
-import ActiveBorrowingsPage from './pages/ActiveBorrowingsPage.jsx';
-import CustomerReturnedHistoryPage from './pages/CustomerReturnedHistoryPage.jsx';
-import CustomerPurchaseHistoryPage from './pages/CustomerPurchaseHistoryPage.jsx';
-import ButtonSamplesPage from './pages/ButtonSamplesPage';
 
-// โครงสร้าง Router ที่แก้ไขใหม่ให้เสถียรขึ้น
+// Lazy load all the pages
+const DashboardRedirect = lazy(() => import('./components/auth/DashboardRedirect.jsx'));
+const InventoryPage = lazy(() => import('./pages/InventoryPage.jsx'));
+const UserManagementPage = lazy(() => import('./pages/UserManagementPage.jsx'));
+const BrandPage = lazy(() => import('./pages/BrandPage.jsx'));
+const CategoryPage = lazy(() => import('./pages/CategoryPage.jsx'));
+const CustomerPage = lazy(() => import('./pages/CustomerPage.jsx'));
+const CustomerHistoryPage = lazy(() => import('./pages/CustomerHistoryPage.jsx'));
+const ActiveBorrowingsPage = lazy(() => import('./pages/ActiveBorrowingsPage.jsx'));
+const CustomerReturnedHistoryPage = lazy(() => import('./pages/CustomerReturnedHistoryPage.jsx'));
+const CustomerPurchaseHistoryPage = lazy(() => import('./pages/CustomerPurchaseHistoryPage.jsx'));
+const SalePage = lazy(() => import('./pages/SalePage.jsx'));
+const CreateSalePage = lazy(() => import('./pages/CreateSalePage.jsx'));
+const SaleDetailPage = lazy(() => import('./pages/SaleDetailPage.jsx'));
+const EditSalePage = lazy(() => import('./pages/EditSalePage.jsx'));
+const BorrowingPage = lazy(() => import('./pages/BorrowingPage.jsx'));
+const CreateBorrowingPage = lazy(() => import('./pages/CreateBorrowingPage.jsx'));
+const BorrowingDetailPage = lazy(() => import('./pages/BorrowingDetailPage.jsx'));
+const ProductModelPage = lazy(() => import('./pages/ProductModelPage.jsx')); // --- เพิ่มบรรทัดนี้ ---
+const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
+
+// Fallback component to show while lazy components are loading
+const Loading = () => (
+  <div className="flex justify-center items-center h-[calc(100vh-100px)]">
+    <p>Loading Page...</p>
+  </div>
+);
+
+const routes = [
+  { path: 'dashboard', Page: DashboardRedirect },
+  { path: 'inventory', Page: InventoryPage },
+  { path: 'users', Page: UserManagementPage },
+  { path: 'brands', Page: BrandPage },
+  { path: 'categories', Page: CategoryPage },
+  { path: 'customers', Page: CustomerPage },
+  { path: 'customers/:id/history', Page: CustomerHistoryPage },
+  { path: 'customers/:id/active-borrowings', Page: ActiveBorrowingsPage },
+  { path: 'customers/:id/returned-history', Page: CustomerReturnedHistoryPage },
+  { path: 'customers/:id/purchase-history', Page: CustomerPurchaseHistoryPage },
+  { path: 'sales', Page: SalePage },
+  { path: 'sales/new', Page: CreateSalePage },
+  { path: 'sales/:saleId', Page: SaleDetailPage },
+  { path: 'sales/edit/:saleId', Page: EditSalePage },
+  { path: 'borrowings', Page: BorrowingPage },
+  { path: 'borrowings/new', Page: CreateBorrowingPage },
+  { path: 'borrowings/:borrowingId', Page: BorrowingDetailPage },
+  { path: 'product-models', Page: ProductModelPage }, // --- เพิ่มบรรทัดนี้ ---
+  { path: 'profile', Page: ProfilePage },
+];
+
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <App />, // App component เป็น Shell หลักที่ครอบทั้งหมด
+    element: <App />,
     children: [
-      // --- Public Route ---
       {
         path: 'login',
         element: <LoginPage />
       },
-      // --- Protected Routes ---
       {
-        element: <ProtectedRoute />, // ตัวเช็ค Token
+        element: <ProtectedRoute />,
         children: [
           {
-            element: <MainLayout />, // Layout สำหรับหน้าหลังบ้านทั้งหมด
+            element: <MainLayout />,
             children: [
-              // ถ้าเข้ามาที่ path "/" ให้ redirect ไป "/dashboard"
               { index: true, element: <Navigate to="/dashboard" replace /> },
-              { path: 'dashboard', element: <DashboardRedirect /> },
-              { path: 'inventory', element: <InventoryPage /> },
-              { path: 'users', element: <UserManagementPage /> },
-              { path: 'brands', element: <BrandPage /> },
-              { path: 'categories', element: <CategoryPage /> },
-              { path: 'customers', element: <CustomerPage /> },
-              { path: 'customers/:id/history', element: <CustomerHistoryPage /> },
-              { path: 'customers/:id/active-borrowings', element: <ActiveBorrowingsPage />},
-              { path: 'customers/:id/returned-history', element: <CustomerReturnedHistoryPage /> },
-              { path: 'customers/:id/purchase-history', element: <CustomerPurchaseHistoryPage /> },
-              { path: 'sales', element: <SalePage /> },
-              { path: 'sales/new', element: <CreateSalePage /> },
-              { path: 'sales/:saleId', element: <SaleDetailPage /> },
-              { path: 'sales/edit/:saleId', element: <EditSalePage /> },
-              { path: 'borrowings', element: <BorrowingPage /> },
-              { path: 'borrowings/new', element: <CreateBorrowingPage /> },
-              { path: 'borrowings/:borrowingId', element: <BorrowingDetailPage /> },
-              { path: 'product-models', element: <ProductModelPage /> },
-              { path: 'profile', element: <ProfilePage /> },
-              { path: 'button-samples', element: <ButtonSamplesPage /> },
+              ...routes.map(({ path, Page }) => ({
+                path,
+                element: <Suspense fallback={<Loading />}><Page /></Suspense>,
+              })),
             ]
           }
         ]

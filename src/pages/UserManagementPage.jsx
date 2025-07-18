@@ -12,7 +12,24 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
-import { PlusCircle } from "lucide-react"; // --- เพิ่มการ import ---
+import { PlusCircle } from "lucide-react";
+
+const SkeletonRow = () => (
+    <tr className="border-b">
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-6 w-24 bg-gray-200 rounded-md animate-pulse"></div></td>
+        <td className="p-2 text-center"><div className="h-6 w-24 bg-gray-200 rounded-md animate-pulse mx-auto"></div></td>
+        <td className="p-2">
+            <div className="flex items-center justify-center gap-2">
+                <div className="h-8 w-24 bg-gray-200 rounded-md animate-pulse"></div>
+                <div className="h-8 w-20 bg-gray-200 rounded-md animate-pulse"></div>
+                <div className="h-8 w-20 bg-gray-200 rounded-md animate-pulse"></div>
+            </div>
+        </td>
+    </tr>
+);
 
 const initialFormData = { name: "", username: "", email: "", password: "", role: "EMPLOYEE" };
 
@@ -99,11 +116,9 @@ export default function UserManagementPage() {
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>User Management</CardTitle>
-                {/* --- START: ส่วนที่แก้ไข --- */}
                 <Button onClick={() => openDialog()}>
                     <PlusCircle className="mr-2 h-4 w-4" /> Add User
                 </Button>
-                {/* --- END --- */}
             </CardHeader>
             <CardContent>
                  <div className="mb-4">
@@ -114,32 +129,45 @@ export default function UserManagementPage() {
                     />
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
-    <table className="w-full text-left text-sm whitespace-nowrap">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2">Name</th>
                                 <th className="p-2">Username</th>
                                 <th className="p-2">Email</th>
                                 <th className="p-2">Role</th>
-                                <th className="p-2">Status</th>
+                                <th className="p-2 text-center">Status</th>
                                 <th className="p-2 text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td colSpan="6" className="text-center p-4">Loading...</td></tr>
+                                [...Array(pagination.itemsPerPage)].map((_, i) => <SkeletonRow key={i} />)
                             ) : displayedUsers.map((user) => (
                                 <tr key={user.id} className="border-b">
                                     <td className="p-2">{user.name}</td>
                                     <td className="p-2">{user.username}</td>
                                     <td className="p-2">{user.email}</td>
                                     <td className="p-2"><Badge variant={user.role === 'SUPER_ADMIN' ? 'default' : 'secondary'}>{user.role}</Badge></td>
-                                    <td className="p-2"><Badge variant={user.accountStatus === 'ACTIVE' ? 'default' : 'destructive'}>{user.accountStatus}</Badge></td>
+                                    <td className="p-2 text-center">
+                                        <Badge variant={user.accountStatus === 'ACTIVE' ? 'success' : 'destructive'} className="w-24 justify-center">
+                                            {user.accountStatus}
+                                        </Badge>
+                                    </td>
                                     <td className="p-2">
                                         <div className="flex items-center justify-center gap-2">
-                                            <Button variant="outline" size="sm" onClick={() => openDialog(user)}>Edit</Button>
-                                            <Button variant={user.accountStatus === 'ACTIVE' ? 'secondary' : 'default'} size="sm" onClick={() => handleToggleStatus(user)}>{user.accountStatus === 'ACTIVE' ? 'Disable' : 'Enable'}</Button>
-                                            <Button variant="destructive" size="sm" onClick={() => setUserToDelete(user)}>Delete</Button>
+                                            {/* --- START: ส่วนที่แก้ไข --- */}
+                                            <Button
+                                                variant={user.accountStatus === 'ACTIVE' ? 'primary-outline' : 'default'}
+                                                size="sm"
+                                                className="w-24"
+                                                onClick={() => handleToggleStatus(user)}
+                                            >
+                                                {user.accountStatus === 'ACTIVE' ? 'Disable' : 'Enable'}
+                                            </Button>
+                                            {/* --- END --- */}
+                                            <Button variant="outline" size="sm" className="w-20" onClick={() => openDialog(user)}>Edit</Button>
+                                            <Button variant="destructive" size="sm" className="w-20" onClick={() => setUserToDelete(user)}>Delete</Button>
                                         </div>
                                     </td>
                                 </tr>

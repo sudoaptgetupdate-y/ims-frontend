@@ -12,7 +12,19 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
-import { PlusCircle } from "lucide-react"; // --- เพิ่มการ import ---
+import { PlusCircle } from "lucide-react";
+
+const SkeletonRow = () => (
+    <tr className="border-b">
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2">
+            <div className="flex items-center justify-center gap-2">
+                <div className="h-8 w-20 bg-gray-200 rounded-md animate-pulse"></div>
+                <div className="h-8 w-20 bg-gray-200 rounded-md animate-pulse"></div>
+            </div>
+        </td>
+    </tr>
+);
 
 export default function BrandPage() {
     const token = useAuthStore((state) => state.token);
@@ -95,13 +107,11 @@ export default function BrandPage() {
                 <CardTitle>Brand Management</CardTitle>
                 {canManage && (
                     <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                        {/* --- START: ส่วนที่แก้ไข --- */}
                         <DialogTrigger asChild>
                             <Button>
-                                <PlusCircle className="mr-0 h-4 w-4" /> Add Brand
+                                <PlusCircle className="mr-2 h-4 w-4" /> Add Brand
                             </Button>
                         </DialogTrigger>
-                        {/* --- END --- */}
                         <DialogContent>
                             <DialogHeader><DialogTitle>Add New Brand</DialogTitle></DialogHeader>
                             <form onSubmit={handleAddBrand}>
@@ -129,7 +139,7 @@ export default function BrandPage() {
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td colSpan="2" className="text-center p-4">Loading...</td></tr>
+                                [...Array(pagination.itemsPerPage)].map((_, i) => <SkeletonRow key={i} />)
                             ) : brands.map((brand) => (
                                 <tr key={brand.id} className="border-b">
                                     <td className="p-2">{brand.name}</td>

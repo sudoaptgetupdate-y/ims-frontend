@@ -26,6 +26,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// --- START: ส่วนที่แก้ไข 1: สร้าง Skeleton Row Component ---
+const SkeletonRow = () => (
+    <tr className="border-b">
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2 text-center"><div className="h-6 w-24 bg-gray-200 rounded-md animate-pulse mx-auto"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2 text-center"><div className="h-8 w-14 bg-gray-200 rounded-md animate-pulse mx-auto"></div></td>
+    </tr>
+);
+// --- END ---
+
 const initialFormData = {
     serialNumber: "",
     macAddress: "",
@@ -178,14 +191,12 @@ export default function InventoryPage() {
                 <div className="border rounded-lg overflow-x-auto">
                     <table className="w-full text-left text-sm whitespace-nowrap">
                         <colgroup>
-                            {/* --- START: ส่วนที่แก้ไข --- */}
                             <col className="w-[20%]" />
                             <col className="w-[25%]" />
                             <col className="w-[20%]" />
                             <col className="w-[120px]" />
                             <col className="w-[15%]" />
                             <col className="w-[80px]" />
-                            {/* --- END --- */}
                         </colgroup>
                         <thead>
                             <tr className="border-b">
@@ -198,8 +209,9 @@ export default function InventoryPage() {
                             </tr>
                         </thead>
                         <tbody>
+                            {/* --- START: ส่วนที่แก้ไข 2: เรียกใช้ Skeleton ตอน Loading --- */}
                             {isLoading ? (
-                                <tr><td colSpan="6" className="text-center p-4">Loading...</td></tr>
+                                [...Array(pagination.itemsPerPage)].map((_, i) => <SkeletonRow key={i} />)
                             ) : inventoryItems.length > 0 ? (
                                 inventoryItems.map((item) => (
                                     <tr key={item.id} className="border-b">
@@ -279,6 +291,7 @@ export default function InventoryPage() {
                             ) : (
                                 <tr><td colSpan="6" className="text-center p-4">No items found.</td></tr>
                             )}
+                             {/* --- END --- */}
                         </tbody>
                     </table>
                 </div>

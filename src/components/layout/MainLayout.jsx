@@ -1,7 +1,8 @@
 // src/components/layout/MainLayout.jsx
 
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom"; // --- 1. เพิ่ม useLocation ---
+import { motion } from "framer-motion";
 import { LogOut, Menu, X, UserCircle, User, ArrowRightLeft, Building2, ShoppingCart, Settings, Package, Boxes, Tag, Users } from "lucide-react";
 import {
     DropdownMenu,
@@ -14,7 +15,6 @@ import {
 import useAuthStore from "@/store/authStore";
 import { Button } from "@/components/ui/button";
 
-// คอมโพเนนต์สำหรับรายการเมนูแต่ละอันเพื่อลดการเขียนโค้ดซ้ำ
 const NavItem = ({ to, children, handleclick }) => (
     <NavLink
         to={to}
@@ -27,6 +27,7 @@ const NavItem = ({ to, children, handleclick }) => (
 
 const MainLayout = () => {
     const navigate = useNavigate();
+    const location = useLocation(); // --- 2. เรียกใช้ useLocation ---
     const logout = useAuthStore((state) => state.logout);
     const currentUser = useAuthStore((state) => state.user);
     const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
@@ -45,7 +46,7 @@ const MainLayout = () => {
     const SidebarContent = () => (
         <div className="flex flex-col h-full text-slate-200">
             <div className="p-4 border-b border-slate-700 flex justify-between items-center">
-                <h1 className="text-2xl font-bold">IMS</h1>
+                <h1 className="text-2xl font-bold">NTPLC NAKHON</h1>
                 <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-400 hover:text-white">
                     <X size={24} />
                 </button>
@@ -95,7 +96,7 @@ const MainLayout = () => {
             )}
 
             <aside
-                className={`fixed inset-y-0 left-0 z-30 w-64 bg-gray-800 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                className={`fixed inset-y-0 left-0 z-30 w-64 bg-slate-900 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
             >
                 <SidebarContent />
@@ -136,8 +137,20 @@ const MainLayout = () => {
                 </header>
 
                 <main className="flex-1 p-4 md:p-6 overflow-y-auto bg-gray-100">
-                    <Outlet />
+                    <motion.div
+                        key={location.pathname}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
+                    >
+                        <Outlet />
+                    </motion.div>
                 </main>
+
+                    <footer className="p-4 bg-white text-center text-sm text-muted-foreground border-t no-print">
+                    © 2025 ศูนย์การขายและวิศวกรรมบริการ นครศรีธรรมราช. All Rights Reserved. - Version 1.0.0
+                </footer>
+
             </div>
         </div>
     );

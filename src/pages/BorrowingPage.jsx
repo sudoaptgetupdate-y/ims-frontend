@@ -11,6 +11,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import { PlusCircle } from "lucide-react";
 
+const SkeletonRow = () => (
+    <tr className="border-b">
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2 text-center"><div className="h-6 w-24 bg-gray-200 rounded-md animate-pulse mx-auto"></div></td>
+        <td className="p-2 text-center"><div className="h-5 w-24 bg-gray-200 rounded animate-pulse mx-auto"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2 text-center"><div className="h-8 w-[76px] bg-gray-200 rounded-md animate-pulse mx-auto"></div></td>
+    </tr>
+);
+
 export default function BorrowingPage() {
     const navigate = useNavigate();
     const { user: currentUser } = useAuthStore((state) => state);
@@ -28,16 +40,14 @@ export default function BorrowingPage() {
         handleFilterChange
     } = usePaginatedFetch("http://localhost:5001/api/borrowings", 10, { status: "All" });
 
-    // --- START: ส่วนที่แก้ไข ---
     const getStatusVariant = (status) => {
         switch (status) {
-            case 'BORROWED': return 'warning'; // เปลี่ยนเป็นสีส้ม
+            case 'BORROWED': return 'warning';
             case 'RETURNED': return 'secondary';
             case 'OVERDUE': return 'destructive';
             default: return 'outline';
         }
     };
-    // --- END ---
 
     return (
         <Card>
@@ -93,7 +103,7 @@ export default function BorrowingPage() {
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td colSpan="7" className="text-center p-4">Loading...</td></tr>
+                                [...Array(pagination.itemsPerPage)].map((_, i) => <SkeletonRow key={i} />)
                             ) : borrowings.map((b) => (
                                 <tr key={b.id} className="border-b">
                                     <td className="p-2">{b.borrower.name}</td>

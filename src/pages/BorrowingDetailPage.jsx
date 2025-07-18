@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, CheckSquare, Square } from "lucide-react";
+import { ArrowLeft, CheckSquare, Square, Printer } from "lucide-react";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -37,8 +37,9 @@ export default function BorrowingDetailPage() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setBorrowing(response.data);
-            setSelectedToReturn(response.data.items.filter(item => item.status === 'BORROWED').map(item => item.id));
-        } catch (error) {
+            setSelectedToReturn(response.data.items.filter(item => !item.returnedAt).map(item => item.id));
+        } catch (error)
+        {
             toast.error("Failed to fetch borrowing details.");
         } finally {
             setLoading(false);
@@ -54,6 +55,10 @@ export default function BorrowingDetailPage() {
             prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
         );
     };
+    
+    const handlePrint = () => {
+        window.print();
+    };
 
     const handleReturnItems = async () => {
         if (selectedToReturn.length === 0) {
@@ -66,7 +71,7 @@ export default function BorrowingDetailPage() {
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             toast.success("Items have been returned successfully.");
-            fetchDetails();
+            fetchDetails(); 
             setSelectedToReturn([]);
         } catch (error) {
             toast.error(error.response?.data?.error || "Failed to process return.");
@@ -76,17 +81,25 @@ export default function BorrowingDetailPage() {
     if (loading) return <p>Loading details...</p>;
     if (!borrowing) return <p>Record not found.</p>;
 
-    const itemsBorrowed = borrowing.items.filter(item => item.status === 'BORROWED');
-    const itemsReturned = borrowing.items.filter(item => item.status !== 'BORROWED');
+    const itemsToReturn = borrowing.items.filter(item => !item.returnedAt);
 
     return (
-        <div className="space-y-6">
-            {/* --- START: ส่วนที่แก้ไข --- */}
-            <Button variant="outline" onClick={() => navigate(-1)}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-            </Button>
-            {/* --- END --- */}
+        <div className="space-y-6 printable-area">
+            <div className="flex justify-between items-center no-print">
+                <Button variant="outline" onClick={() => navigate(-1)}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back
+                </Button>
+                <Button onClick={handlePrint}>
+                    <Printer className="mr-2 h-4 w-4" />
+                    Print
+                </Button>
+            </div>
+
+            <div className="print-header hidden">
+                <h1>ใบยืม-คืนสินค้า / Borrowing Note</h1>
+                <p>เอกสารฉบับนี้เป็นการยืนยันการยืมสินค้า</p>
+            </div>
 
             <Card>
                 <CardHeader>
@@ -100,28 +113,46 @@ export default function BorrowingDetailPage() {
                     <div><p className="font-semibold">Approved By</p><p>{borrowing.approvedBy.name}</p></div>
                     <div><p className="font-semibold">Status</p><div><Badge>{borrowing.status}</Badge></div></div>
                     {borrowing.returnDate && (
-                         <div><p className="font-semibold">Return Date</p><p>{new Date(borrowing.returnDate).toLocaleString()}</p></div>
+                         <div><p className="font-semibold">Final Return Date</p><p>{new Date(borrowing.returnDate).toLocaleString()}</p></div>
                     )}
                 </CardContent>
             </Card>
 
-            {itemsBorrowed.length > 0 && (
-                <Card>
+            {itemsToReturn.length > 0 && (
+                <Card className="no-print">
                     <CardHeader>
                         <CardTitle>Items to Return</CardTitle>
                         <CardDescription>Select items that the customer is returning now.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-2">
-                            {itemsBorrowed.map(item => (
-                                <div key={item.id} onClick={() => handleToggleReturnItem(item.id)} className="flex items-center gap-3 p-2 border rounded-md cursor-pointer hover:bg-slate-50">
-                                    {selectedToReturn.includes(item.id) ? <CheckSquare className="h-5 w-5 text-blue-600" /> : <Square className="h-5 w-5 text-slate-400" />}
-                                    <div>
-                                        <p className="font-medium">{item.productModel.modelNumber}</p>
-                                        <p className="text-xs text-slate-500">S/N: {item.serialNumber || 'N/A'}</p>
-                                    </div>
-                                </div>
-                            ))}
+                        <div className="border rounded-md">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b">
+                                        <th className="p-2 w-12 text-center">Return</th>
+                                        <th className="p-2 text-left">Product</th>
+                                        <th className="p-2 text-left">Serial Number</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {itemsToReturn.map(item => (
+                                        <tr 
+                                            key={item.id} 
+                                            className="border-b cursor-pointer hover:bg-slate-50"
+                                            onClick={() => handleToggleReturnItem(item.id)}
+                                        >
+                                            <td className="p-2 text-center">
+                                                {selectedToReturn.includes(item.id) 
+                                                    ? <CheckSquare className="h-5 w-5 text-primary mx-auto" /> 
+                                                    : <Square className="h-5 w-5 text-muted-foreground mx-auto" />
+                                                }
+                                            </td>
+                                            <td className="p-2">{item.productModel.modelNumber}</td>
+                                            <td className="p-2">{item.serialNumber || 'N/A'}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </CardContent>
                     <CardFooter>
@@ -150,18 +181,50 @@ export default function BorrowingDetailPage() {
                 </Card>
             )}
 
-            {itemsReturned.length > 0 && (
-                <Card>
-                    <CardHeader><CardTitle>Already Returned Items</CardTitle></CardHeader>
-                    <CardContent>
-                       <ul className="list-disc list-inside text-sm text-slate-600">
-                            {itemsReturned.map(item => (
-                                <li key={item.id}>{item.productModel.modelNumber} (S/N: {item.serialNumber || 'N/A'})</li>
+            <Card>
+                 <CardHeader><CardTitle>Borrowed Items List ({borrowing.items.length})</CardTitle></CardHeader>
+                 <CardContent>
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="p-2 text-left">Product Model</th>
+                                <th className="p-2 text-left">Serial Number</th>
+                                <th className="p-2 text-left">MAC Address</th>
+                                <th className="p-2 text-left">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {borrowing.items.map(item => (
+                                <tr key={item.id} className="border-b">
+                                    <td className="p-2">{item.productModel.modelNumber}</td>
+                                    <td className="p-2">{item.serialNumber || 'N/A'}</td>
+                                    <td className="p-2">{item.macAddress || 'N/A'}</td>
+                                    <td className="p-2">
+                                        <Badge variant={item.returnedAt ? 'secondary' : 'warning'}>
+                                            {item.returnedAt ? `Returned on ${new Date(item.returnedAt).toLocaleDateString()}` : 'Borrowed'}
+                                        </Badge>
+                                    </td>
+                                </tr>
                             ))}
-                       </ul>
-                    </CardContent>
-                </Card>
-            )}
+                        </tbody>
+                    </table>
+                 </CardContent>
+            </Card>
+
+            {/* --- START: ส่วนที่เพิ่มเข้ามา --- */}
+            <div className="signature-section hidden">
+                <div className="signature-box">
+                    <div className="signature-line"></div>
+                    <p>( ..................................................... )</p>
+                    <p>เจ้าหน้าที่</p>
+                </div>
+                <div className="signature-box">
+                    <div className="signature-line"></div>
+                    <p>( ..................................................... )</p>
+                    <p>ลูกค้า / ผู้ยืมสินค้า</p>
+                </div>
+            </div>
+            {/* --- END --- */}
         </div>
     );
 }

@@ -23,6 +23,20 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 
+const SkeletonRow = () => (
+    <tr className="border-b">
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2">
+            <div className="flex items-center justify-center gap-2">
+                <div className="h-8 w-20 bg-gray-200 rounded-md animate-pulse"></div>
+                <div className="h-8 w-20 bg-gray-200 rounded-md animate-pulse"></div>
+            </div>
+        </td>
+    </tr>
+);
+
 export default function CategoryPage() {
     const token = useAuthStore((state) => state.token);
     const user = useAuthStore((state) => state.user);
@@ -85,7 +99,7 @@ export default function CategoryPage() {
                 </div>
                 {canManage && (
                     <Button onClick={handleAdd}>
-                        <PlusCircle className="mr-0 h-4 w-4" /> Add Category
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Category
                     </Button>
                 )}
             </CardHeader>
@@ -97,8 +111,8 @@ export default function CategoryPage() {
                     className="mb-4"
                 />
 
-                <div className="border rounded-lg overflow-x-auto">
-                    <table className="w-full text-sm whitespace-nowrap">
+                <div className="border rounded-lg">
+                    <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2 text-left">Name</th>
@@ -109,7 +123,7 @@ export default function CategoryPage() {
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td colSpan="4" className="text-center p-4">Loading...</td></tr>
+                                [...Array(pagination.itemsPerPage)].map((_, i) => <SkeletonRow key={i} />)
                             ) : categories.map((category) => (
                                 <tr key={category.id} className="border-b">
                                     <td className="p-2">{category.name}</td>

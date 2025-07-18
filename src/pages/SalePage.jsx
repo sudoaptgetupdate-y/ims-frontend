@@ -8,13 +8,29 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import { Badge } from "@/components/ui/badge";
-
 import { PlusCircle } from "lucide-react";
+
+const SkeletonRow = () => (
+    <tr className="border-b">
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2 text-center"><div className="h-6 w-24 bg-gray-200 rounded-md animate-pulse mx-auto"></div></td>
+        <td className="p-2 text-center"><div className="h-5 w-8 bg-gray-200 rounded animate-pulse mx-auto"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2">
+            <div className="flex items-center justify-center gap-2">
+                <div className="h-8 w-[76px] bg-gray-200 rounded-md animate-pulse"></div>
+                <div className="h-8 w-14 bg-gray-200 rounded-md animate-pulse"></div>
+            </div>
+        </td>
+    </tr>
+);
+
 
 export default function SalePage() {
     const navigate = useNavigate();
@@ -38,7 +54,6 @@ export default function SalePage() {
     
     const [saleToVoid, setSaleToVoid] = useState(null);
 
-    // --- START: ส่วนที่แก้ไข 2: เพิ่มฟังก์ชันสำหรับจัดการสี Badge ---
     const getStatusVariant = (status) => {
         switch (status) {
             case 'COMPLETED': return 'success';
@@ -46,7 +61,6 @@ export default function SalePage() {
             default: return 'secondary';
         }
     };
-    // --- END ---
 
     const handleVoidSale = async () => {
         if (!saleToVoid) return;
@@ -114,7 +128,7 @@ export default function SalePage() {
                         </thead>
                         <tbody>
                             {isLoading ? (
-                                <tr><td colSpan="6" className="text-center p-4">Loading...</td></tr>
+                                [...Array(pagination.itemsPerPage)].map((_, i) => <SkeletonRow key={i} />)
                             ) : sales.map((sale) => (
                                 <tr key={sale.id} className="border-b">
                                     <td className="p-2 text-left">{sale.customer.name}</td>
@@ -127,38 +141,21 @@ export default function SalePage() {
                                     <td className="p-2 text-center">{sale.itemsSold.length}</td>
                                     <td className="p-2 text-right">{sale.total.toLocaleString('en-US')} THB</td>
                                     <td className="p-2 text-center">
-                                        {/* --- START: ส่วนที่แก้ไข 1: เปลี่ยนเป็นปุ่ม 2 ปุ่ม --- */}
                                         <div className="flex items-center justify-center gap-2">
                                             <Button variant="outline" size="sm" onClick={() => navigate(`/sales/${sale.id}`)}>
                                                 Details
                                             </Button>
                                             {isSuperAdmin && (
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button 
-                                                            variant="destructive" 
-                                                            size="sm"
-                                                            disabled={sale.status !== 'COMPLETED'}
-                                                        >
-                                                            Void
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Are you sure you want to void this sale?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                This action will void sale record (ID: {sale.id}) and return all sold items to stock. This is irreversible.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel onClick={() => setSaleToVoid(null)}>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleVoidSale(sale)}>Continue</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
+                                                <Button 
+                                                    variant="destructive" 
+                                                    size="sm"
+                                                    disabled={sale.status !== 'COMPLETED'}
+                                                    onClick={() => setSaleToVoid(sale)}
+                                                >
+                                                    Void
+                                                </Button>
                                             )}
                                         </div>
-                                        {/* --- END --- */}
                                     </td>
                                 </tr>
                             ))}
@@ -184,6 +181,20 @@ export default function SalePage() {
                     <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={!pagination || pagination.currentPage >= pagination.totalPages}>Next</Button>
                 </div>
             </CardFooter>
+            <AlertDialog open={!!saleToVoid} onOpenChange={() => setSaleToVoid(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure you want to void this sale?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action will void sale record (ID: {saleToVoid?.id}) and return all sold items to stock. This is irreversible.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleVoidSale}>Continue</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Card>
     );
 }
