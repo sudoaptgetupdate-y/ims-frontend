@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import useAuthStore from "@/store/authStore";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckSquare, Square } from "lucide-react";
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -21,6 +21,10 @@ export default function ActiveBorrowingsPage() {
     const [allItems, setAllItems] = useState([]); 
     const [customer, setCustomer] = useState(null);
     const [loading, setLoading] = useState(true);
+    
+    // --- START: ส่วนที่แก้ไข 1: เพิ่ม State สำหรับเก็บรายการที่เลือก ---
+    const [selectedToReturn, setSelectedToReturn] = useState([]);
+    // --- END ---
 
     const fetchData = async () => {
         if (!customerId || !token) return;
@@ -43,7 +47,6 @@ export default function ActiveBorrowingsPage() {
             );
             setAllItems(flattenedItems);
             setCustomer(customerRes.data);
-
         } catch (error) {
             toast.error("Failed to fetch data.");
         } finally {
@@ -55,18 +58,50 @@ export default function ActiveBorrowingsPage() {
         fetchData();
     }, [customerId, token]);
 
-    const handleReturnItem = async (borrowingId, itemId) => {
-        try {
-            await axios.patch(`http://localhost:5001/api/borrowings/${borrowingId}/return`,
-                { itemIdsToReturn: [itemId] },
+    // --- START: ส่วนที่แก้ไข 2: เพิ่มฟังก์ชันสำหรับจัดการ Check List และการคืนของทีละหลายชิ้น ---
+    const handleToggleReturnItem = (itemId) => {
+        setSelectedToReturn(prev =>
+            prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
+        );
+    };
+    
+    const handleReturnSelectedItems = async () => {
+        if (selectedToReturn.length === 0) {
+            toast.error("Please select at least one item to return.");
+            return;
+        }
+
+        // จัดกลุ่ม item ที่เลือกตาม borrowingId
+        const itemsByBorrowing = selectedToReturn.reduce((acc, itemId) => {
+            const item = allItems.find(i => i.id === itemId);
+            if (item) {
+                const { borrowingId } = item;
+                if (!acc[borrowingId]) {
+                    acc[borrowingId] = [];
+                }
+                acc[borrowingId].push(itemId);
+            }
+            return acc;
+        }, {});
+
+        // สร้าง Promise สำหรับยิง API ไปยังแต่ละ borrowingId
+        const returnPromises = Object.entries(itemsByBorrowing).map(([borrowingId, itemIds]) =>
+            axios.patch(`http://localhost:5001/api/borrowings/${borrowingId}/return`,
+                { itemIdsToReturn: itemIds },
                 { headers: { Authorization: `Bearer ${token}` } }
-            );
-            toast.success("Item returned successfully!");
+            )
+        );
+
+        try {
+            await Promise.all(returnPromises);
+            toast.success(`${selectedToReturn.length} item(s) have been returned successfully.`);
             fetchData();
+            setSelectedToReturn([]);
         } catch (error) {
-            toast.error(error.response?.data?.error || "Failed to return item.");
+            toast.error("An error occurred while returning items.");
         }
     };
+    // --- END ---
 
     if (loading) return <p>Loading active borrowings...</p>;
 
@@ -82,63 +117,84 @@ export default function ActiveBorrowingsPage() {
                     Back to Summary
                 </Button>
             </div>
+            
             <Card>
                 <CardHeader>
                     <CardTitle>All Borrowed Items ({allItems.length})</CardTitle>
                     <CardDescription>
-                        List of all items currently borrowed by this customer.
+                        Select items to return. You can return items from different borrowing records at the same time.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b">
-                                <th className="p-2 text-left">Product</th>
-                                <th className="p-2 text-left">Serial Number</th>
-                                <th className="p-2 text-left">From Borrowing ID</th>
-                                <th className="p-2 text-center">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {allItems.length > 0 ? (
-                                allItems.map(item => (
-                                    <tr key={item.id} className="border-b">
-                                        <td className="p-2">{item.productModel.modelNumber}</td>
-                                        <td className="p-2">{item.serialNumber || 'N/A'}</td>
-                                        <td className="p-2">{item.borrowingId}</td>
-                                        <td className="p-2 text-center">
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button size="sm">Return</Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Confirm Return</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Return item: <strong>{item.productModel.modelNumber}</strong> (S/N: {item.serialNumber || 'N/A'})?
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleReturnItem(item.borrowingId, item.id)}>
-                                                            Continue
-                                                        </AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
+                    {/* --- START: ส่วนที่แก้ไข 3: ปรับตารางเป็น Check list --- */}
+                    <div className="border rounded-md">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b">
+                                    <th className="p-2 w-12 text-center">Return</th>
+                                    <th className="p-2 text-left">Product</th>
+                                    <th className="p-2 text-left">Serial Number</th>
+                                    <th className="p-2 text-left">From Borrowing ID</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {allItems.length > 0 ? (
+                                    allItems.map(item => (
+                                        <tr 
+                                            key={item.id} 
+                                            className="border-b cursor-pointer hover:bg-slate-50"
+                                            onClick={() => handleToggleReturnItem(item.id)}
+                                        >
+                                            <td className="p-2 text-center">
+                                                {selectedToReturn.includes(item.id) 
+                                                    ? <CheckSquare className="h-5 w-5 text-primary mx-auto" /> 
+                                                    : <Square className="h-5 w-5 text-muted-foreground mx-auto" />
+                                                }
+                                            </td>
+                                            <td className="p-2">{item.productModel.modelNumber}</td>
+                                            <td className="p-2">{item.serialNumber || 'N/A'}</td>
+                                            <td className="p-2">{item.borrowingId}</td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="4" className="p-4 text-center text-muted-foreground">
+                                            This customer has no active borrowings.
                                         </td>
                                     </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="4" className="p-4 text-center text-muted-foreground">
-                                        This customer has no active borrowings.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                     {/* --- END --- */}
                 </CardContent>
+                {/* --- START: ส่วนที่แก้ไข 4: เพิ่มปุ่ม Confirm Return --- */}
+                {allItems.length > 0 && (
+                    <CardFooter className="pt-6">
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button disabled={selectedToReturn.length === 0}>
+                                    Confirm Return ({selectedToReturn.length} items)
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirm Return</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        You are about to return {selectedToReturn.length} item(s). This will change their status back to "IN_STOCK". Are you sure?
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleReturnSelectedItems}>
+                                        Continue
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </CardFooter>
+                )}
+                 {/* --- END --- */}
             </Card>
         </div>
     );
