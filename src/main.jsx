@@ -30,6 +30,7 @@ import CustomerHistoryPage from './pages/CustomerHistoryPage.jsx';
 import ActiveBorrowingsPage from './pages/ActiveBorrowingsPage.jsx';
 import CustomerReturnedHistoryPage from './pages/CustomerReturnedHistoryPage.jsx';
 import CustomerPurchaseHistoryPage from './pages/CustomerPurchaseHistoryPage.jsx';
+import ButtonSamplesPage from './pages/ButtonSamplesPage';
 
 // โครงสร้าง Router ที่แก้ไขใหม่ให้เสถียรขึ้น
 const router = createBrowserRouter([
@@ -70,6 +71,7 @@ const router = createBrowserRouter([
               { path: 'borrowings/:borrowingId', element: <BorrowingDetailPage /> },
               { path: 'product-models', element: <ProductModelPage /> },
               { path: 'profile', element: <ProfilePage /> },
+              { path: 'button-samples', element: <ButtonSamplesPage /> },
             ]
           }
         ]
