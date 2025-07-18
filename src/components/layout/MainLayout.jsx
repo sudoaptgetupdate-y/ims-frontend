@@ -2,9 +2,7 @@
 
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-// --- START: ส่วนที่แก้ไข 1: เพิ่ม ArrowRightLeft และลบ PackageOpen ที่ไม่ได้ใช้ออก ---
 import { LogOut, Menu, X, UserCircle, User, ArrowRightLeft, Building2, ShoppingCart, Settings, Package, Boxes, Tag, Users } from "lucide-react";
-// --- END ---
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -62,9 +60,7 @@ const MainLayout = () => {
                     <p className="px-3 py-2 text-slate-400 text-xs font-bold uppercase">Business</p>
                     <div className="space-y-1">
                         <NavItem to="/sales" handleclick={onNavLinkClick}><ShoppingCart size={18} /> Sales</NavItem>
-                        {/* --- START: ส่วนที่แก้ไข 2: เปลี่ยนไอคอน --- */}
                         <NavItem to="/borrowings" handleclick={onNavLinkClick}><ArrowRightLeft size={18} /> Borrowing</NavItem>
-                        {/* --- END --- */}
                         <NavItem to="/customers" handleclick={onNavLinkClick}><Users size={18} /> Customers</NavItem>
                     </div>
                 </div>
@@ -99,7 +95,7 @@ const MainLayout = () => {
             )}
 
             <aside
-                className={`fixed inset-y-0 left-0 z-30 w-64 bg-slate-900 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+                className={`fixed inset-y-0 left-0 z-30 w-64 bg-gray-800 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
             >
                 <SidebarContent />

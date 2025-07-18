@@ -1,3 +1,5 @@
+// src/components/ui/badge.jsx
+
 import * as React from "react"
 import { cva } from "class-variance-authority";
 
@@ -15,6 +17,14 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
         outline: "text-foreground",
+        // --- START: เพิ่ม variant ใหม่ ---
+        success: 
+          "border-transparent bg-emerald-500 text-primary-foreground shadow hover:bg-emerald-500/80",
+        warning: 
+          "border-transparent bg-orange-500 text-primary-foreground shadow hover:bg-orange-500/80",
+        info: 
+          "border-transparent bg-sky-500 text-primary-foreground shadow hover:bg-sky-500/80",
+        // --- END ---
       },
     },
     defaultVariants: {

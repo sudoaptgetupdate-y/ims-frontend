@@ -40,9 +40,10 @@ export default function CategoryPage() {
     } = usePaginatedFetch("http://localhost:5001/api/categories");
 
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
+    const [categoryToDelete, setCategoryToDelete] = useState(null);
+
 
     const handleAdd = () => {
         setIsEditMode(false);
@@ -57,13 +58,13 @@ export default function CategoryPage() {
     };
 
     const handleDelete = (category) => {
-        setSelectedCategory(category);
-        setIsConfirmDeleteOpen(true);
+        setCategoryToDelete(category);
     };
 
     const confirmDelete = async () => {
+        if (!categoryToDelete) return;
         try {
-            await axios.delete(`http://localhost:5001/api/categories/${selectedCategory.id}`, {
+            await axios.delete(`http://localhost:5001/api/categories/${categoryToDelete.id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             toast.success("Category deleted successfully.");
@@ -71,8 +72,7 @@ export default function CategoryPage() {
         } catch (error) {
             toast.error(error.response?.data?.error || "Failed to delete category.");
         } finally {
-            setIsConfirmDeleteOpen(false);
-            setSelectedCategory(null);
+            setCategoryToDelete(null);
         }
     };
 
@@ -85,7 +85,7 @@ export default function CategoryPage() {
                 </div>
                 {canManage && (
                     <Button onClick={handleAdd}>
-                        <PlusCircle className="mr-2 h-4 w-4" /> Add Category
+                        <PlusCircle className="mr-0 h-4 w-4" /> Add Category
                     </Button>
                 )}
             </CardHeader>
@@ -97,13 +97,13 @@ export default function CategoryPage() {
                     className="mb-4"
                 />
 
-                <div className="border rounded-lg">
-                    <table className="w-full text-sm">
+                <div className="border rounded-lg overflow-x-auto">
+                    <table className="w-full text-sm whitespace-nowrap">
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2 text-left">Name</th>
-                                <th className="p-2 text-left">Requires S/N</th>
-                                <th className="p-2 text-left">Requires MAC</th>
+                                <th className="p-2 text-center">Requires S/N</th>
+                                <th className="p-2 text-center">Requires MAC</th>
                                 <th className="p-2 text-center">Actions</th>
                             </tr>
                         </thead>
@@ -113,8 +113,8 @@ export default function CategoryPage() {
                             ) : categories.map((category) => (
                                 <tr key={category.id} className="border-b">
                                     <td className="p-2">{category.name}</td>
-                                    <td className="p-2">{category.requiresSerialNumber ? 'Yes' : 'No'}</td>
-                                    <td className="p-2">{category.requiresMacAddress ? 'Yes' : 'No'}</td>
+                                    <td className="p-2 text-center">{category.requiresSerialNumber ? 'Yes' : 'No'}</td>
+                                    <td className="p-2 text-center">{category.requiresMacAddress ? 'Yes' : 'No'}</td>
                                     <td className="p-2">
                                         <div className="flex items-center justify-center gap-2">
                                             {canManage ? (
@@ -160,12 +160,12 @@ export default function CategoryPage() {
                 onSuccess={refreshData}
             />
 
-            <AlertDialog open={isConfirmDeleteOpen} onOpenChange={setIsConfirmDeleteOpen}>
+            <AlertDialog open={!!categoryToDelete} onOpenChange={() => setCategoryToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the category: <strong>{selectedCategory?.name}</strong>.
+                            This will permanently delete the category: <strong>{categoryToDelete?.name}</strong>.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

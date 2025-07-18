@@ -16,8 +16,7 @@ import { Label } from "@/components/ui/label";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import { ProductModelCombobox } from "@/components/ui/ProductModelCombobox";
 
-// --- START: ส่วนที่แก้ไข: เปลี่ยนไอคอน MoreHorizontal เป็น Settings2 ---
-import { Settings2, View, ShoppingCart, ArrowRightLeft, Edit, Trash2 } from "lucide-react";
+import { MoreHorizontal, View, ShoppingCart, ArrowRightLeft, Edit, Trash2, PlusCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +25,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-// --- END ---
 
 const initialFormData = {
     serialNumber: "",
@@ -55,14 +53,14 @@ export default function InventoryPage() {
     const [selectedModelInfo, setSelectedModelInfo] = useState(null);
 
     const getStatusVariant = (status) => {
-        const variants = { 
-            IN_STOCK: 'default',
-            SOLD: 'secondary', 
-            RESERVED: 'outline', 
-            DEFECTIVE: 'destructive',
-            BORROWED: 'default'
-        };
-        return variants[status] || 'secondary';
+        switch (status) {
+            case 'IN_STOCK': return 'success';
+            case 'SOLD': return 'secondary';
+            case 'BORROWED': return 'warning';
+            case 'DEFECTIVE': return 'destructive';
+            case 'RESERVED': return 'info';
+            default: return 'secondary';
+        }
     };
     
     const openDialog = (item = null) => {
@@ -149,7 +147,11 @@ export default function InventoryPage() {
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Inventory Item Management</CardTitle>
-                 {canManage && <Button onClick={() => openDialog()}>Add Inventory Item</Button>}
+                 {canManage && 
+                    <Button onClick={() => openDialog()}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Inventory Item
+                    </Button>
+                }
             </CardHeader>
             <CardContent>
                 <div className="flex flex-col sm:flex-row gap-4 mb-4">
@@ -174,13 +176,23 @@ export default function InventoryPage() {
                     </Select>
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
-                    <table className="w-full text-left text-sm">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                        <colgroup>
+                            {/* --- START: ส่วนที่แก้ไข --- */}
+                            <col className="w-[20%]" />
+                            <col className="w-[25%]" />
+                            <col className="w-[20%]" />
+                            <col className="w-[120px]" />
+                            <col className="w-[15%]" />
+                            <col className="w-[80px]" />
+                            {/* --- END --- */}
+                        </colgroup>
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2 text-left">Product Model</th>
                                 <th className="p-2 text-left">Serial Number</th>
                                 <th className="p-2 text-left">MAC Address</th>
-                                <th className="p-2 text-left">Status</th>
+                                <th className="p-2 text-center">Status</th>
                                 <th className="p-2 text-left">Added By</th>
                                 <th className="p-2 text-center">Actions</th>
                             </tr>
@@ -192,23 +204,24 @@ export default function InventoryPage() {
                                 inventoryItems.map((item) => (
                                     <tr key={item.id} className="border-b">
                                         <td className="p-2">{item.productModel.modelNumber}</td>
-                                        <td className="p-2 max-w-xs truncate">{item.serialNumber || '-'}</td>
-                                        <td className="p-2 max-w-xs truncate">{item.macAddress || '-'}</td>
-                                        <td className="p-2"><Badge variant={getStatusVariant(item.status)}>{item.status}</Badge></td>
+                                        <td className="p-2 truncate">{item.serialNumber || '-'}</td>
+                                        <td className="p-2 truncate">{item.macAddress || '-'}</td>
+                                        <td className="p-2 text-center">
+                                            <Badge variant={getStatusVariant(item.status)} className="w-24 justify-center">
+                                                {item.status}
+                                            </Badge>
+                                        </td>
                                         <td className="p-2">{item.addedBy.name}</td>
                                         <td className="p-2 text-center">
                                             <DropdownMenu>
-                                                {/* --- START: ส่วนที่แก้ไข 2: เปลี่ยนไอคอนในปุ่ม --- */}
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <Button variant="primary-outline" size="icon" className="h-8 w-14 p-0">
                                                         <span className="sr-only">Open menu</span>
-                                                        <Settings2 className="h-4 w-4" />
+                                                        <MoreHorizontal className="h-4 w-4" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
-                                                {/* --- END --- */}
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuSeparator />
                                                     <DropdownMenuItem
                                                         onClick={() => {
                                                             if (item.status === 'SOLD') navigate(`/sales/${item.saleId}`);
@@ -218,17 +231,18 @@ export default function InventoryPage() {
                                                     >
                                                         <View className="mr-2 h-4 w-4" /> View Details
                                                     </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
                                                     <DropdownMenuItem
                                                         onClick={() => handleSellItem(item)}
                                                         disabled={item.status !== 'IN_STOCK'}
                                                     >
-                                                        <ShoppingCart className="mr-2 h-4 w-4" /> Sell
+                                                        <ShoppingCart className="mr-2 h-4 w-4" /> Sell This Item
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
                                                         onClick={() => handleBorrowItem(item)}
                                                         disabled={item.status !== 'IN_STOCK'}
                                                     >
-                                                        <ArrowRightLeft className="mr-2 h-4 w-4" /> Borrow
+                                                        <ArrowRightLeft className="mr-2 h-4 w-4" /> Borrow This Item
                                                     </DropdownMenuItem>
                                                     
                                                     {canManage && (
@@ -238,17 +252,17 @@ export default function InventoryPage() {
                                                                 onClick={() => openDialog(item)}
                                                                 disabled={item.status === 'SOLD' || item.status === 'BORROWED'}
                                                             >
-                                                                <Edit className="mr-2 h-4 w-4" /> Edit Item
+                                                                <Edit className="mr-2 h-4 w-4" /> Edit
                                                             </DropdownMenuItem>
                                                             <AlertDialog>
                                                                 <AlertDialogTrigger asChild>
-                                                                    <div 
-                                                                        className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 text-red-600 focus:text-red-500"
-                                                                        onSelect={(e) => { if (item.status === 'SOLD' || item.status === 'BORROWED') e.preventDefault(); }}
+                                                                    <DropdownMenuItem
+                                                                        className="text-red-600 focus:text-red-500"
+                                                                        onSelect={(e) => e.preventDefault()}
                                                                         disabled={item.status === 'SOLD' || item.status === 'BORROWED'}
                                                                     >
-                                                                        <Trash2 className="mr-2 h-4 w-4" /> Delete Item
-                                                                    </div>
+                                                                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                                    </DropdownMenuItem>
                                                                 </AlertDialogTrigger>
                                                                 <AlertDialogContent>
                                                                     <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the item: <strong>{item.serialNumber}</strong>.</AlertDialogDescription></AlertDialogHeader>

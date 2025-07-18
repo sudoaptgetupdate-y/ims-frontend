@@ -9,9 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
+import { PlusCircle } from "lucide-react"; // --- เพิ่มการ import ---
 
 const initialFormData = {
     modelNumber: "",
@@ -43,6 +44,8 @@ export default function ProductModelPage() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [formData, setFormData] = useState(initialFormData);
     const [editingModelId, setEditingModelId] = useState(null);
+    const [modelToDelete, setModelToDelete] = useState(null);
+
 
     useEffect(() => {
         const fetchRelatedData = async () => {
@@ -111,13 +114,16 @@ export default function ProductModelPage() {
         }
     };
 
-    const handleDelete = async (modelId) => {
+    const confirmDelete = async () => {
+        if(!modelToDelete) return;
         try {
-            await axios.delete(`http://localhost:5001/api/product-models/${modelId}`, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.delete(`http://localhost:5001/api/product-models/${modelToDelete.id}`, { headers: { Authorization: `Bearer ${token}` } });
             toast.success("Product model deleted successfully!");
             refreshData();
         } catch (error) {
             toast.error(error.response?.data?.error || "Failed to delete product model.");
+        } finally {
+            setModelToDelete(null);
         }
     };
 
@@ -125,14 +131,20 @@ export default function ProductModelPage() {
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Product Model Management</CardTitle>
-                {canManage && <Button onClick={() => openDialog()}>Add Product Model</Button>}
+                {/* --- START: ส่วนที่แก้ไข --- */}
+                {canManage && 
+                    <Button onClick={() => openDialog()}>
+                        <PlusCircle className="mr-0 h-4 w-4" /> Add Product Model
+                    </Button>
+                }
+                 {/* --- END --- */}
             </CardHeader>
             <CardContent>
                 <div className="mb-4">
                     <Input placeholder="Search by model or description..." value={searchTerm} onChange={(e) => handleSearchChange(e.target.value)} />
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
-                    <table className="w-full text-left text-sm">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2">Model Number</th>
@@ -149,7 +161,7 @@ export default function ProductModelPage() {
                             ) : productModels.map((model) => (
                                 <tr key={model.id} className="border-b">
                                     <td className="p-2">{model.modelNumber}</td>
-                                    <td className="p-2">{model.description}</td>
+                                    <td className="p-2 max-w-xs truncate">{model.description}</td>
                                     <td className="p-2 text-right">{model.sellingPrice.toLocaleString()}</td>
                                     <td className="p-2">{model.category.name}</td>
                                     <td className="p-2">{model.brand.name}</td>
@@ -157,13 +169,7 @@ export default function ProductModelPage() {
                                          <td className="p-2">
                                             <div className="flex items-center justify-center gap-2">
                                                 <Button variant="outline" size="sm" className="w-20" onClick={() => openDialog(model)}>Edit</Button>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="w-20">Delete</Button></AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the model: <strong>{model.modelNumber}</strong>.</AlertDialogDescription></AlertDialogHeader>
-                                                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(model.id)}>Continue</AlertDialogAction></AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
+                                                <Button variant="destructive" size="sm" className="w-20" onClick={() => setModelToDelete(model)}>Delete</Button>
                                             </div>
                                         </td>
                                     )}
@@ -226,6 +232,12 @@ export default function ProductModelPage() {
                     </form>
                 </DialogContent>
             </Dialog>
+            <AlertDialog open={!!modelToDelete} onOpenChange={() => setModelToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the model: <strong>{modelToDelete?.modelNumber}</strong>.</AlertDialogDescription></AlertDialogHeader>
+                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={confirmDelete}>Continue</AlertDialogAction></AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Card>
     );
 }

@@ -8,10 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
+import { PlusCircle } from "lucide-react"; // --- เพิ่มการ import ---
 
 const initialFormData = { name: "", username: "", email: "", password: "", role: "EMPLOYEE" };
 
@@ -34,6 +35,8 @@ export default function UserManagementPage() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [formData, setFormData] = useState(initialFormData);
     const [editingUserId, setEditingUserId] = useState(null);
+    const [userToDelete, setUserToDelete] = useState(null);
+
 
     const handleInputChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value });
     const handleSelectChange = (value) => setFormData({ ...formData, role: value });
@@ -69,12 +72,16 @@ export default function UserManagementPage() {
         }
     };
 
-    const handleDelete = async (userId) => {
+    const confirmDelete = async () => {
+        if(!userToDelete) return;
         try {
-            await axios.delete(`http://localhost:5001/api/users/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.delete(`http://localhost:5001/api/users/${userToDelete.id}`, { headers: { Authorization: `Bearer ${token}` } });
             toast.success("User deleted successfully!");
             refreshData();
         } catch (error) { toast.error(error.response?.data?.error || "Failed to delete user."); }
+        finally {
+            setUserToDelete(null);
+        }
     };
 
     const handleToggleStatus = async (user) => {
@@ -92,7 +99,11 @@ export default function UserManagementPage() {
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>User Management</CardTitle>
-                <Button onClick={() => openDialog()}>Add User</Button>
+                {/* --- START: ส่วนที่แก้ไข --- */}
+                <Button onClick={() => openDialog()}>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add User
+                </Button>
+                {/* --- END --- */}
             </CardHeader>
             <CardContent>
                  <div className="mb-4">
@@ -103,7 +114,7 @@ export default function UserManagementPage() {
                     />
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
-    <table className="w-full text-left text-sm">
+    <table className="w-full text-left text-sm whitespace-nowrap">
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2">Name</th>
@@ -128,19 +139,7 @@ export default function UserManagementPage() {
                                         <div className="flex items-center justify-center gap-2">
                                             <Button variant="outline" size="sm" onClick={() => openDialog(user)}>Edit</Button>
                                             <Button variant={user.accountStatus === 'ACTIVE' ? 'secondary' : 'default'} size="sm" onClick={() => handleToggleStatus(user)}>{user.accountStatus === 'ACTIVE' ? 'Disable' : 'Enable'}</Button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild><Button variant="destructive" size="sm">Delete</Button></AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                        <AlertDialogDescription>Delete user: <strong>{user.name}</strong></AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDelete(user.id)}>Continue</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
+                                            <Button variant="destructive" size="sm" onClick={() => setUserToDelete(user)}>Delete</Button>
                                         </div>
                                     </td>
                                 </tr>
@@ -206,6 +205,18 @@ export default function UserManagementPage() {
                     </form>
                 </DialogContent>
             </Dialog>
+            <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>Delete user: <strong>{userToDelete?.name}</strong></AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete}>Continue</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Card>
     );
 }

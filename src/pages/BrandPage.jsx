@@ -6,12 +6,13 @@ import useAuthStore from "@/store/authStore";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger, } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
+import { PlusCircle } from "lucide-react"; // --- เพิ่มการ import ---
 
 export default function BrandPage() {
     const token = useAuthStore((state) => state.token);
@@ -34,6 +35,8 @@ export default function BrandPage() {
 
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [editingBrand, setEditingBrand] = useState(null);
+    const [brandToDelete, setBrandToDelete] = useState(null);
+
 
     const handleAddBrand = async (e) => {
         e.preventDefault();
@@ -62,21 +65,28 @@ export default function BrandPage() {
         }
     };
 
-    const handleDeleteBrand = async (brandId) => {
+    const confirmDelete = async () => {
+        if (!brandToDelete) return;
         try {
-            await axios.delete(`http://localhost:5001/api/brands/${brandId}`, {
+            await axios.delete(`http://localhost:5001/api/brands/${brandToDelete.id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             toast.success("Brand deleted successfully!");
             refreshData();
         } catch (error) {
             toast.error(error.response?.data?.error || "Failed to delete brand.");
+        } finally {
+            setBrandToDelete(null);
         }
     };
 
     const openEditDialog = (brand) => {
         setEditingBrand({ ...brand });
         setIsEditDialogOpen(true);
+    };
+    
+    const openDeleteDialog = (brand) => {
+        setBrandToDelete(brand);
     };
 
     return (
@@ -85,7 +95,13 @@ export default function BrandPage() {
                 <CardTitle>Brand Management</CardTitle>
                 {canManage && (
                     <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                        <DialogTrigger asChild><Button>Add Brand</Button></DialogTrigger>
+                        {/* --- START: ส่วนที่แก้ไข --- */}
+                        <DialogTrigger asChild>
+                            <Button>
+                                <PlusCircle className="mr-0 h-4 w-4" /> Add Brand
+                            </Button>
+                        </DialogTrigger>
+                        {/* --- END --- */}
                         <DialogContent>
                             <DialogHeader><DialogTitle>Add New Brand</DialogTitle></DialogHeader>
                             <form onSubmit={handleAddBrand}>
@@ -103,8 +119,8 @@ export default function BrandPage() {
                 <div className="mb-4">
                     <Input placeholder="Search for a brand..." value={searchTerm} onChange={(e) => handleSearchChange(e.target.value)} />
                 </div>
-                <div className="border rounded-lg">
-                    <table className="w-full text-sm">
+                <div className="border rounded-lg overflow-x-auto">
+                    <table className="w-full text-sm whitespace-nowrap">
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2 text-left">Name</th>
@@ -121,25 +137,7 @@ export default function BrandPage() {
                                         <td className="p-2">
                                             <div className="flex items-center justify-center gap-2">
                                                 <Button variant="outline" size="sm" className="w-20" onClick={() => openEditDialog(brand)}>Edit</Button>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button variant="destructive" size="sm" className="w-20">Delete</Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                                This will permanently delete the <strong>{brand.name}</strong> brand. This action cannot be undone.
-                                                            </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => handleDeleteBrand(brand.id)}>
-                                                                Continue
-                                                            </AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
+                                                <Button variant="destructive" size="sm" className="w-20" onClick={() => openDeleteDialog(brand)}>Delete</Button>
                                             </div>
                                         </td>
                                     )}
@@ -180,6 +178,21 @@ export default function BrandPage() {
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <AlertDialog open={!!brandToDelete} onOpenChange={() => setBrandToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the <strong>{brandToDelete?.name}</strong> brand. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete}>Continue</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Card>
     );
 }

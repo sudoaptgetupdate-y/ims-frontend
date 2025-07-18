@@ -1,5 +1,6 @@
 // src/pages/SalePage.jsx
 
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import useAuthStore from "@/store/authStore";
@@ -13,16 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import { Badge } from "@/components/ui/badge";
 
-// 1. Import ไอคอน SlidersHorizontal, View, Ban
-import { SlidersHorizontal, View, Ban } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { PlusCircle } from "lucide-react";
 
 export default function SalePage() {
     const navigate = useNavigate();
@@ -43,16 +35,31 @@ export default function SalePage() {
         handleFilterChange,
         refreshData 
     } = usePaginatedFetch("http://localhost:5001/api/sales", 10, { status: "All" });
+    
+    const [saleToVoid, setSaleToVoid] = useState(null);
 
-    const handleVoidSale = async (saleId) => {
+    // --- START: ส่วนที่แก้ไข 2: เพิ่มฟังก์ชันสำหรับจัดการสี Badge ---
+    const getStatusVariant = (status) => {
+        switch (status) {
+            case 'COMPLETED': return 'success';
+            case 'VOIDED': return 'destructive';
+            default: return 'secondary';
+        }
+    };
+    // --- END ---
+
+    const handleVoidSale = async () => {
+        if (!saleToVoid) return;
         try {
-            await axios.patch(`http://localhost:5001/api/sales/${saleId}/void`, {}, {
+            await axios.patch(`http://localhost:5001/api/sales/${saleToVoid.id}/void`, {}, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             toast.success("Sale record has been voided!");
             refreshData();
         } catch (error) {
             toast.error(error.response?.data?.error || "Failed to void sale record.");
+        } finally {
+            setSaleToVoid(null);
         }
     };
 
@@ -62,7 +69,7 @@ export default function SalePage() {
                 <CardTitle>Sale Records</CardTitle>
                 {canManage && (
                     <Button onClick={() => navigate('/sales/new')}>
-                        Create New Sale
+                        <PlusCircle className="mr-2 h-4 w-4" /> Create New Sale
                     </Button>
                 )}
             </CardHeader>
@@ -87,11 +94,19 @@ export default function SalePage() {
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
                     <table className="w-full text-sm whitespace-nowrap">
+                        <colgroup>
+                            <col className="w-[25%]" />
+                            <col className="w-[25%]" />
+                            <col className="w-[120px]" />
+                            <col className="w-[80px]" />
+                            <col className="w-[15%]" />
+                            <col className="w-[180px]" />
+                        </colgroup>
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2 text-left">Customer</th>
                                 <th className="p-2 text-left">Sale Date</th>
-                                <th className="p-2 text-left">Status</th>
+                                <th className="p-2 text-center">Status</th>
                                 <th className="p-2 text-center">Items</th>
                                 <th className="p-2 text-right">Total (inc. VAT)</th>
                                 <th className="p-2 text-center">Actions</th>
@@ -104,56 +119,46 @@ export default function SalePage() {
                                 <tr key={sale.id} className="border-b">
                                     <td className="p-2 text-left">{sale.customer.name}</td>
                                     <td className="p-2 text-left">{new Date(sale.saleDate).toLocaleString()}</td>
-                                    <td className="p-2 text-left">
-                                        <Badge variant={sale.status === 'VOIDED' ? "destructive" : "default"}>
+                                    <td className="p-2 text-center">
+                                        <Badge variant={getStatusVariant(sale.status)} className="w-24 justify-center">
                                             {sale.status}
                                         </Badge>
                                     </td>
                                     <td className="p-2 text-center">{sale.itemsSold.length}</td>
                                     <td className="p-2 text-right">{sale.total.toLocaleString('en-US')} THB</td>
                                     <td className="p-2 text-center">
-                                        <DropdownMenu>
-                                            {/* 2. เปลี่ยนปุ่ม Action เป็นแบบ Outline และใช้ไอคอนใหม่ */}
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="outline" size="icon" className="h-8 w-8">
-                                                    <span className="sr-only">Open menu</span>
-                                                    <SlidersHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem onClick={() => navigate(`/sales/${sale.id}`)}>
-                                                    <View className="mr-2 h-4 w-4" /> View Details
-                                                </DropdownMenuItem>
-                                                
-                                                {isSuperAdmin && (
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <DropdownMenuItem
-                                                                className="text-red-600 focus:text-red-500"
-                                                                disabled={sale.status !== 'COMPLETED'}
-                                                                onSelect={(e) => e.preventDefault()}
-                                                            >
-                                                                <Ban className="mr-2 h-4 w-4" /> Void Sale
-                                                            </DropdownMenuItem>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Are you sure you want to void this sale?</AlertDialogTitle>
-                                                                <AlertDialogDescription>
-                                                                    This action will void sale record (ID: {sale.id}) and return all sold items to stock. This is irreversible.
-                                                                </AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => handleVoidSale(sale.id)}>Continue</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                )}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        {/* --- START: ส่วนที่แก้ไข 1: เปลี่ยนเป็นปุ่ม 2 ปุ่ม --- */}
+                                        <div className="flex items-center justify-center gap-2">
+                                            <Button variant="outline" size="sm" onClick={() => navigate(`/sales/${sale.id}`)}>
+                                                Details
+                                            </Button>
+                                            {isSuperAdmin && (
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button 
+                                                            variant="destructive" 
+                                                            size="sm"
+                                                            disabled={sale.status !== 'COMPLETED'}
+                                                        >
+                                                            Void
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you sure you want to void this sale?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This action will void sale record (ID: {sale.id}) and return all sold items to stock. This is irreversible.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel onClick={() => setSaleToVoid(null)}>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleVoidSale(sale)}>Continue</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            )}
+                                        </div>
+                                        {/* --- END --- */}
                                     </td>
                                 </tr>
                             ))}

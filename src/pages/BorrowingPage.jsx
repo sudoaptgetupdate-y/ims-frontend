@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
+import { PlusCircle } from "lucide-react";
 
 export default function BorrowingPage() {
     const navigate = useNavigate();
@@ -20,19 +21,23 @@ export default function BorrowingPage() {
         pagination, 
         isLoading, 
         searchTerm,
+        filters,
         handleSearchChange, 
         handlePageChange, 
         handleItemsPerPageChange,
-    } = usePaginatedFetch("http://localhost:5001/api/borrowings");
+        handleFilterChange
+    } = usePaginatedFetch("http://localhost:5001/api/borrowings", 10, { status: "All" });
 
+    // --- START: ส่วนที่แก้ไข ---
     const getStatusVariant = (status) => {
-        const variants = {
-            BORROWED: 'default',
-            RETURNED: 'secondary',
-            OVERDUE: 'destructive'
-        };
-        return variants[status] || 'outline';
+        switch (status) {
+            case 'BORROWED': return 'warning'; // เปลี่ยนเป็นสีส้ม
+            case 'RETURNED': return 'secondary';
+            case 'OVERDUE': return 'destructive';
+            default: return 'outline';
+        }
     };
+    // --- END ---
 
     return (
         <Card>
@@ -40,28 +45,49 @@ export default function BorrowingPage() {
                 <CardTitle>Borrowing Records</CardTitle>
                 {canManage && (
                     <Button onClick={() => navigate('/borrowings/new')}>
-                        Create New Borrowing
+                        <PlusCircle className="mr-2 h-4 w-4" /> Create New Borrowing
                     </Button>
                 )}
             </CardHeader>
             <CardContent>
-                <div className="mb-4">
+                <div className="flex flex-col sm:flex-row gap-4 mb-4">
                     <Input
                         placeholder="Search by Customer, Admin, or Serial Number..."
                         value={searchTerm}
                         onChange={(e) => handleSearchChange(e.target.value)}
+                        className="flex-grow"
                     />
+                    <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+                        <SelectTrigger className="w-full sm:w-[180px]">
+                            <SelectValue placeholder="Filter by Status..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="All">All Statuses</SelectItem>
+                            <SelectItem value="BORROWED">Borrowed</SelectItem>
+                            <SelectItem value="RETURNED">Returned</SelectItem>
+                            <SelectItem value="OVERDUE">Overdue</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="border rounded-lg overflow-x-auto">
                     <table className="w-full text-sm whitespace-nowrap">
+                         <colgroup>
+                            <col className="w-[20%]" />
+                            <col className="w-[15%]" />
+                            <col className="w-[15%]" />
+                            <col className="w-[120px]" />
+                            <col className="w-[15%]" />
+                            <col className="w-[20%]" />
+                            <col className="w-[100px]" />
+                        </colgroup>
                         <thead>
                             <tr className="border-b">
-                                <th className="p-2">Customer</th>
-                                <th className="p-2">Borrow Date</th>
-                                <th className="p-2">Due Date</th>
-                                <th className="p-2">Status</th>
-                                <th className="p-2">Item Status</th>
-                                <th className="p-2">Approved By</th>
+                                <th className="p-2 text-left">Customer</th>
+                                <th className="p-2 text-left">Borrow Date</th>
+                                <th className="p-2 text-left">Due Date</th>
+                                <th className="p-2 text-center">Status</th>
+                                <th className="p-2 text-center">Item Status</th>
+                                <th className="p-2 text-left">Approved By</th>
                                 <th className="p-2 text-center">Actions</th>
                             </tr>
                         </thead>
@@ -73,9 +99,10 @@ export default function BorrowingPage() {
                                     <td className="p-2">{b.borrower.name}</td>
                                     <td className="p-2">{new Date(b.borrowDate).toLocaleDateString()}</td>
                                     <td className="p-2">{b.dueDate ? new Date(b.dueDate).toLocaleDateString() : 'N/A'}</td>
-                                    <td className="p-2"><Badge variant={getStatusVariant(b.status)}>{b.status}</Badge></td>
-                                    {/* === จุดที่แก้ไข: เปลี่ยนมาใช้ totalItemCount และ returnedItemCount === */}
-                                    <td className="p-2">{b.returnedItemCount}/{b.totalItemCount} Returned</td>
+                                    <td className="p-2 text-center">
+                                        <Badge variant={getStatusVariant(b.status)} className="w-24 justify-center">{b.status}</Badge>
+                                    </td>
+                                    <td className="p-2 text-center">{b.returnedItemCount}/{b.totalItemCount} Returned</td>
                                     <td className="p-2">{b.approvedBy.name}</td>
                                     <td className="p-2 text-center">
                                         <Button variant="outline" size="sm" onClick={() => navigate(`/borrowings/${b.id}`)}>

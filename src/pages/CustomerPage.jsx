@@ -11,7 +11,7 @@ import { PlusCircle } from "lucide-react";
 import CustomerFormDialog from "@/components/dialogs/CustomerFormDialog";
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -30,9 +30,9 @@ export default function CustomerPage() {
     } = usePaginatedFetch("http://localhost:5001/api/customers");
 
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [isEditMode, setIsEditMode] = useState(false);
+    const [customerToDelete, setCustomerToDelete] = useState(null);
 
     const handleAdd = () => {
         setIsEditMode(false);
@@ -47,13 +47,13 @@ export default function CustomerPage() {
     };
 
     const handleDelete = (customer) => {
-        setSelectedCustomer(customer);
-        setIsConfirmDeleteOpen(true);
+        setCustomerToDelete(customer);
     };
 
     const confirmDelete = async () => {
+        if (!customerToDelete) return;
         try {
-            await axios.delete(`http://localhost:5001/api/customers/${selectedCustomer.id}`, {
+            await axios.delete(`http://localhost:5001/api/customers/${customerToDelete.id}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             toast.success("Customer deleted successfully.");
@@ -61,8 +61,7 @@ export default function CustomerPage() {
         } catch (error) {
             toast.error(error.response?.data?.error || "Failed to delete customer.");
         } finally {
-            setIsConfirmDeleteOpen(false);
-            setSelectedCustomer(null);
+            setCustomerToDelete(null);
         }
     };
 
@@ -87,7 +86,14 @@ export default function CustomerPage() {
                     className="mb-4"
                 />
                 <div className="border rounded-lg overflow-x-auto">
-                    <table className="w-full text-left text-sm">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                        <colgroup>
+                            <col className="w-[15%]" />
+                            <col className="w-[25%]" />
+                            <col className="w-[15%]" />
+                            <col className="w-[30%]" />
+                            <col className="w-[240px]" />
+                        </colgroup>
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2 text-left">Code</th>
@@ -106,8 +112,9 @@ export default function CustomerPage() {
                                         <td className="p-2">{customer.customerCode}</td>
                                         <td className="p-2">{customer.name}</td>
                                         <td className="p-2">{customer.phone || '-'}</td>
-                                        <td className="p-2">{customer.address || '-'}</td>
-                                        <td className="p-2">
+                                        <td className="p-2 truncate">{customer.address || '-'}</td>
+                                        <td className="p-2 text-center">
+                                            {/* --- START: ส่วนที่แก้ไข --- */}
                                             <div className="flex items-center justify-center gap-2">
                                                 <Button variant="outline" size="sm" className="w-20" onClick={() => navigate(`/customers/${customer.id}/history`)}>History</Button>
                                                 {canManage && (
@@ -117,6 +124,7 @@ export default function CustomerPage() {
                                                     </>
                                                 )}
                                             </div>
+                                            {/* --- END --- */}
                                         </td>
                                     </tr>
                                 ))
@@ -154,12 +162,12 @@ export default function CustomerPage() {
                 isEditMode={isEditMode}
                 onSuccess={refreshData}
             />
-            <AlertDialog open={isConfirmDeleteOpen} onOpenChange={setIsConfirmDeleteOpen}>
+            <AlertDialog open={!!customerToDelete} onOpenChange={() => setCustomerToDelete(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the customer account for <strong>{selectedCustomer?.name}</strong>.
+                            This will permanently delete the customer account for <strong>{customerToDelete?.name}</strong>. This action cannot be undone and might affect sales records.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

@@ -56,11 +56,13 @@ export default function CustomerReturnedHistoryPage() {
                     <CardTitle>All Returned Items ({items.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
+                    {/* --- START: ส่วนที่แก้ไข --- */}
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b">
                                 <th className="p-2 text-left">Product</th>
                                 <th className="p-2 text-left">Serial Number</th>
+                                <th className="p-2 text-left">Borrowed On</th>
                                 <th className="p-2 text-left">Returned On</th>
                                 <th className="p-2 text-left">From Borrowing ID</th>
                             </tr>
@@ -70,12 +72,14 @@ export default function CustomerReturnedHistoryPage() {
                                 <tr key={`${item.id}-${item.transactionId}`} className="border-b">
                                     <td className="p-2">{item.productModel.modelNumber}</td>
                                     <td className="p-2">{item.serialNumber || 'N/A'}</td>
+                                    <td className="p-2">{item.borrowDate ? new Date(item.borrowDate).toLocaleDateString() : 'N/A'}</td>
                                     <td className="p-2">{item.returnDate ? new Date(item.returnDate).toLocaleDateString() : 'N/A'}</td>
                                     <td className="p-2">{item.transactionId}</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
+                     {/* --- END --- */}
                 </CardContent>
             </Card>
         </div>
