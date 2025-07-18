@@ -106,16 +106,38 @@ export default function BorrowingDetailPage() {
                     <CardTitle>Borrowing Details</CardTitle>
                     <CardDescription>Record ID: {borrowing.id}</CardDescription>
                 </CardHeader>
-                <CardContent className="grid md:grid-cols-3 gap-4 text-sm">
-                    <div><p className="font-semibold">Customer</p><p>{borrowing.borrower.name}</p></div>
-                    <div><p className="font-semibold">Borrow Date</p><p>{new Date(borrowing.borrowDate).toLocaleString()}</p></div>
-                    <div><p className="font-semibold">Due Date</p><p>{borrowing.dueDate ? new Date(borrowing.dueDate).toLocaleDateString() : 'N/A'}</p></div>
-                    <div><p className="font-semibold">Approved By</p><p>{borrowing.approvedBy.name}</p></div>
-                    <div><p className="font-semibold">Status</p><div><Badge>{borrowing.status}</Badge></div></div>
-                    {borrowing.returnDate && (
-                         <div><p className="font-semibold">Final Return Date</p><p>{new Date(borrowing.returnDate).toLocaleString()}</p></div>
-                    )}
+                {/* --- START: ส่วนที่แก้ไข --- */}
+                <CardContent className="grid md:grid-cols-3 gap-4 text-sm print:flex print:justify-between">
+                    <div>
+                        <p className="font-semibold">Customer</p>
+                        <p>{borrowing.borrower.name}</p>
+                    </div>
+                    <div className="md:col-span-2 grid grid-cols-2 gap-4 print:text-right">
+                        <div>
+                            <p className="font-semibold">Borrow Date</p>
+                            <p>{new Date(borrowing.borrowDate).toLocaleString()}</p>
+                        </div>
+                        <div>
+                            <p className="font-semibold">Due Date</p>
+                            <p>{borrowing.dueDate ? new Date(borrowing.dueDate).toLocaleDateString() : 'N/A'}</p>
+                        </div>
+                        <div>
+                            <p className="font-semibold">Approved By</p>
+                            <p>{borrowing.approvedBy.name}</p>
+                        </div>
+                        <div>
+                            <p className="font-semibold">Status</p>
+                            <div><Badge>{borrowing.status}</Badge></div>
+                        </div>
+                        {borrowing.returnDate && (
+                            <div>
+                                <p className="font-semibold">Final Return Date</p>
+                                <p>{new Date(borrowing.returnDate).toLocaleString()}</p>
+                            </div>
+                        )}
+                    </div>
                 </CardContent>
+                {/* --- END --- */}
             </Card>
 
             {itemsToReturn.length > 0 && (
@@ -211,20 +233,18 @@ export default function BorrowingDetailPage() {
                  </CardContent>
             </Card>
 
-            {/* --- START: ส่วนที่เพิ่มเข้ามา --- */}
             <div className="signature-section hidden">
                 <div className="signature-box">
                     <div className="signature-line"></div>
                     <p>( ..................................................... )</p>
-                    <p>เจ้าหน้าที่</p>
+                    <p>เจ้าหน้าที่ / Officer</p>
                 </div>
                 <div className="signature-box">
                     <div className="signature-line"></div>
                     <p>( ..................................................... )</p>
-                    <p>ลูกค้า / ผู้ยืมสินค้า</p>
+                    <p>ผู้ยืมสินค้า / Borrower</p>
                 </div>
             </div>
-            {/* --- END --- */}
         </div>
     );
 }

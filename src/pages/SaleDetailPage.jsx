@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ArrowLeft, AlertTriangle, Printer } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator"; // --- เพิ่มการ import Separator ---
+import { Separator } from "@/components/ui/separator";
 
 export default function SaleDetailPage() {
     const { saleId } = useParams();
@@ -97,11 +97,24 @@ export default function SaleDetailPage() {
                     </CardTitle>
                     <CardDescription>Sale ID: {sale.id}</CardDescription>
                 </CardHeader>
-                <CardContent className="grid md:grid-cols-3 gap-4 text-sm">
-                    <div><p className="font-semibold">Customer</p><p>{sale.customer.name}</p></div>
-                    <div><p className="font-semibold">Sale Date</p><p>{new Date(sale.saleDate).toLocaleString()}</p></div>
-                    <div><p className="font-semibold">Sold By</p><p>{sale.soldBy.name}</p></div>
+                {/* --- START: ส่วนที่แก้ไข --- */}
+                <CardContent className="grid md:grid-cols-3 gap-4 text-sm print:flex print:justify-between">
+                    <div>
+                        <p className="font-semibold">Customer</p>
+                        <p>{sale.customer.name}</p>
+                    </div>
+                    <div className="md:col-span-2 grid grid-cols-2 gap-4 print:text-right">
+                         <div>
+                            <p className="font-semibold">Sale Date</p>
+                            <p>{new Date(sale.saleDate).toLocaleString()}</p>
+                        </div>
+                        <div>
+                            <p className="font-semibold">Sold By</p>
+                            <p>{sale.soldBy.name}</p>
+                        </div>
+                    </div>
                 </CardContent>
+                 {/* --- END --- */}
             </Card>
 
             <Card>
@@ -109,7 +122,6 @@ export default function SaleDetailPage() {
                     <CardTitle>Items Sold ({sale.itemsSold.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {/* --- START: ส่วนที่แก้ไข 1: แก้ไขโครงสร้างตาราง --- */}
                     <table className="w-full text-left text-sm">
                         <thead>
                             <tr className="border-b">
@@ -129,10 +141,7 @@ export default function SaleDetailPage() {
                                 </tr>
                             ))}
                         </tbody>
-                        {/* --- ลบ tfoot ออกจากตารางนี้ --- */}
                     </table>
-
-                    {/* --- เพิ่มส่วนสรุปยอดเข้ามาใหม่นอกตาราง --- */}
                     <div className="flex justify-end pt-4">
                         <div className="w-full max-w-sm space-y-2 text-sm">
                             <div className="flex justify-between">
@@ -150,7 +159,6 @@ export default function SaleDetailPage() {
                             </div>
                         </div>
                     </div>
-                    {/* --- END --- */}
                 </CardContent>
             </Card>
 
@@ -158,12 +166,12 @@ export default function SaleDetailPage() {
                 <div className="signature-box">
                     <div className="signature-line"></div>
                     <p>( ..................................................... )</p>
-                    <p>เจ้าหน้าที่</p>
+                    <p>เจ้าหน้าที่ / Officer</p>
                 </div>
                 <div className="signature-box">
                     <div className="signature-line"></div>
                     <p>( ..................................................... )</p>
-                    <p>ลูกค้า/ผู้ยืมสินค้า</p>
+                    <p>ลูกค้า / Customer</p>
                 </div>
             </div>
         </div>
