@@ -1,9 +1,9 @@
 // src/components/layout/MainLayout.jsx
 
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom"; // --- 1. เพิ่ม useLocation ---
+import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, Menu, X, UserCircle, User, ArrowRightLeft, Building2, ShoppingCart, Settings, Package, Boxes, Tag, Users } from "lucide-react";
+import { LogOut, Menu, X, UserCircle, User, ArrowRightLeft, Building2, ShoppingCart, Settings, Package, Boxes, Tag, Users, HardDrive, Layers } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -27,7 +27,7 @@ const NavItem = ({ to, children, handleclick }) => (
 
 const MainLayout = () => {
     const navigate = useNavigate();
-    const location = useLocation(); // --- 2. เรียกใช้ useLocation ---
+    const location = useLocation();
     const logout = useAuthStore((state) => state.logout);
     const currentUser = useAuthStore((state) => state.user);
     const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
@@ -46,7 +46,7 @@ const MainLayout = () => {
     const SidebarContent = () => (
         <div className="flex flex-col h-full text-slate-200">
             <div className="p-4 border-b border-slate-700 flex justify-between items-center">
-                <h1 className="text-2xl font-bold">NTPLC NAKHON</h1>
+                <h1 className="text-2xl font-bold">IMS</h1>
                 <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-slate-400 hover:text-white">
                     <X size={24} />
                 </button>
@@ -65,6 +65,15 @@ const MainLayout = () => {
                         <NavItem to="/customers" handleclick={onNavLinkClick}><Users size={18} /> Customers</NavItem>
                     </div>
                 </div>
+
+                <div>
+                    <p className="px-3 py-2 text-slate-400 text-xs font-bold uppercase">Assets</p>
+                    <div className="space-y-1">
+                        <NavItem to="/asset-assignments" handleclick={onNavLinkClick}><HardDrive size={18}/> Asset Assignments</NavItem>
+                        <NavItem to="/assets" handleclick={onNavLinkClick}><Layers size={18}/> All Assets</NavItem>
+                    </div>
+                </div>
+
                 <div>
                     <p className="px-3 py-2 text-slate-400 text-xs font-bold uppercase">Products</p>
                      <div className="space-y-1">
@@ -146,11 +155,10 @@ const MainLayout = () => {
                         <Outlet />
                     </motion.div>
                 </main>
-
-                    <footer className="p-4 bg-white text-center text-sm text-muted-foreground border-t no-print">
-                    © 2025 ศูนย์การขายและวิศวกรรมบริการ นครศรีธรรมราช. All Rights Reserved. - Version 1.0.0
+                
+                <footer className="p-4 bg-white text-center text-sm text-muted-foreground border-t no-print">
+                    © 2025 Your Company Name. All Rights Reserved. - Version 1.0.0
                 </footer>
-
             </div>
         </div>
     );

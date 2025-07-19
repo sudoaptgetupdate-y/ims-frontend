@@ -9,6 +9,95 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
+
+const SkeletonRow = () => (
+    <tr className="border-b">
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
+        <td className="p-2 text-center"><div className="h-6 w-24 bg-gray-200 rounded-md animate-pulse mx-auto"></div></td>
+        <td className="p-2 text-center"><div className="h-8 w-[76px] bg-gray-200 rounded-md animate-pulse mx-auto"></div></td>
+    </tr>
+);
+
+const MyAssetsTab = () => {
+    const token = useAuthStore((state) => state.token);
+    const [assets, setAssets] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const fetchAssets = async () => {
+            if (!token) return;
+            try {
+                const response = await axios.get('http://localhost:5001/api/users/me/assets', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setAssets(response.data);
+            } catch (error) {
+                toast.error("Could not load your assets.");
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchAssets();
+    }, [token]);
+
+    const getStatusVariant = (status) => {
+        switch (status) {
+            case 'ASSIGNED': return 'warning';
+            case 'DEFECTIVE': return 'destructive';
+            default: return 'secondary';
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>My Assets</CardTitle>
+                <CardDescription>List of company assets currently assigned to you.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="border rounded-lg overflow-x-auto">
+                    <table className="w-full text-sm whitespace-nowrap">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="p-2 text-left">Asset Code</th>
+                                <th className="p-2 text-left">Product</th>
+                                <th className="p-2 text-left">Serial Number</th>
+                                <th className="p-2 text-center">Status</th>
+                                <th className="p-2 text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {isLoading ? (
+                                [...Array(3)].map((_, i) => <SkeletonRow key={i} />)
+                            ) : assets.length > 0 ? assets.map(asset => (
+                                <tr key={asset.id} className="border-b">
+                                    <td className="p-2 font-semibold">{asset.assetCode}</td>
+                                    <td className="p-2">{asset.productModel.modelNumber}</td>
+                                    <td className="p-2">{asset.serialNumber || 'N/A'}</td>
+                                    <td className="p-2 text-center">
+                                        <Badge variant={getStatusVariant(asset.status)} className="w-24 justify-center">{asset.status}</Badge>
+                                    </td>
+                                    <td className="p-2 text-center">
+                                        <Button variant="outline" size="sm" onClick={() => navigate(`/assets/${asset.id}`)}>
+                                            Details
+                                        </Button>
+                                    </td>
+                                </tr>
+                            )) : (
+                                <tr><td colSpan="5" className="p-4 text-center text-muted-foreground">You have no assets assigned.</td></tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
 
 export default function ProfilePage() {
     const { user, token, login } = useAuthStore();
@@ -27,10 +116,7 @@ export default function ProfilePage() {
         if (user) {
             setName(user.name || '');
             setUsername(user.username || '');
-            // --- START: ส่วนที่แก้ไข ---
-            // ใช้ optional chaining (`?.`) เพื่อความปลอดภัย
             setEmail(user?.email || '');
-            // --- END ---
         }
     }, [user]);
 
@@ -80,20 +166,11 @@ export default function ProfilePage() {
     };
 
     return (
-        <Tabs defaultValue="profile" className="max-w-2xl mx-auto">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger 
-                    value="profile"
-                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow"
-                >
-                    Profile Details
-                </TabsTrigger>
-                <TabsTrigger 
-                    value="password"
-                    className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow"
-                >
-                    Change Password
-                </TabsTrigger>
+        <Tabs defaultValue="profile" className="max-w-4xl mx-auto">
+            <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="profile">Profile Details</TabsTrigger>
+                <TabsTrigger value="password">Change Password</TabsTrigger>
+                <TabsTrigger value="assets">My Assets</TabsTrigger>
             </TabsList>
             
             <TabsContent value="profile">
@@ -129,6 +206,10 @@ export default function ProfilePage() {
                         <CardFooter><Button type="submit" disabled={isPasswordLoading}>{isPasswordLoading ? 'Saving...' : 'Change Password'}</Button></CardFooter>
                     </form>
                 </Card>
+            </TabsContent>
+
+            <TabsContent value="assets">
+                <MyAssetsTab />
             </TabsContent>
         </Tabs>
     );

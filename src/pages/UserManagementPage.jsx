@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import { PlusCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const SkeletonRow = () => (
     <tr className="border-b">
@@ -23,6 +24,7 @@ const SkeletonRow = () => (
         <td className="p-2 text-center"><div className="h-6 w-24 bg-gray-200 rounded-md animate-pulse mx-auto"></div></td>
         <td className="p-2">
             <div className="flex items-center justify-center gap-2">
+                <div className="h-8 w-28 bg-gray-200 rounded-md animate-pulse"></div>
                 <div className="h-8 w-24 bg-gray-200 rounded-md animate-pulse"></div>
                 <div className="h-8 w-20 bg-gray-200 rounded-md animate-pulse"></div>
                 <div className="h-8 w-20 bg-gray-200 rounded-md animate-pulse"></div>
@@ -34,6 +36,7 @@ const SkeletonRow = () => (
 const initialFormData = { name: "", username: "", email: "", password: "", role: "EMPLOYEE" };
 
 export default function UserManagementPage() {
+    const navigate = useNavigate();
     const token = useAuthStore((state) => state.token);
     const currentUser = useAuthStore((state) => state.user);
     
@@ -53,7 +56,6 @@ export default function UserManagementPage() {
     const [formData, setFormData] = useState(initialFormData);
     const [editingUserId, setEditingUserId] = useState(null);
     const [userToDelete, setUserToDelete] = useState(null);
-
 
     const handleInputChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value });
     const handleSelectChange = (value) => setFormData({ ...formData, role: value });
@@ -156,7 +158,7 @@ export default function UserManagementPage() {
                                     </td>
                                     <td className="p-2">
                                         <div className="flex items-center justify-center gap-2">
-                                            {/* --- START: ส่วนที่แก้ไข --- */}
+                                            <Button variant="outline" size="sm" className="w-28" onClick={() => navigate(`/users/${user.id}/assets`)}>Asset History</Button>
                                             <Button
                                                 variant={user.accountStatus === 'ACTIVE' ? 'primary-outline' : 'default'}
                                                 size="sm"
@@ -165,7 +167,6 @@ export default function UserManagementPage() {
                                             >
                                                 {user.accountStatus === 'ACTIVE' ? 'Disable' : 'Enable'}
                                             </Button>
-                                            {/* --- END --- */}
                                             <Button variant="outline" size="sm" className="w-20" onClick={() => openDialog(user)}>Edit</Button>
                                             <Button variant="destructive" size="sm" className="w-20" onClick={() => setUserToDelete(user)}>Delete</Button>
                                         </div>

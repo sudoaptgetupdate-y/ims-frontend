@@ -30,8 +30,19 @@ const EditSalePage = lazy(() => import('./pages/EditSalePage.jsx'));
 const BorrowingPage = lazy(() => import('./pages/BorrowingPage.jsx'));
 const CreateBorrowingPage = lazy(() => import('./pages/CreateBorrowingPage.jsx'));
 const BorrowingDetailPage = lazy(() => import('./pages/BorrowingDetailPage.jsx'));
-const ProductModelPage = lazy(() => import('./pages/ProductModelPage.jsx')); // --- เพิ่มบรรทัดนี้ ---
+const ProductModelPage = lazy(() => import('./pages/ProductModelPage.jsx'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
+const AssetPage = lazy(() => import('./pages/AssetPage.jsx'));
+const CreateAssetPage = lazy(() => import('./pages/CreateAssetPage.jsx'));
+const AssignAssetPage = lazy(() => import('./pages/AssignAssetPage.jsx'));
+const AssetDetailPage = lazy(() => import('./pages/AssetDetailPage.jsx'));
+const EditAssetPage = lazy(() => import('./pages/EditAssetPage.jsx'));
+const AssetAssignmentPage = lazy(() => import('./pages/AssetAssignmentPage.jsx'));
+const CreateAssetAssignmentPage = lazy(() => import('./pages/CreateAssetAssignmentPage.jsx'));
+const AssetAssignmentDetailPage = lazy(() => import('./pages/AssetAssignmentDetailPage.jsx'));
+const AssetHistoryPage = lazy(() => import('./pages/AssetHistoryPage.jsx'));
+const UserAssetHistoryPage = lazy(() => import('./pages/UserAssetHistoryPage.jsx'));
+
 
 // Fallback component to show while lazy components are loading
 const Loading = () => (
@@ -42,15 +53,7 @@ const Loading = () => (
 
 const routes = [
   { path: 'dashboard', Page: DashboardRedirect },
-  { path: 'inventory', Page: InventoryPage },
-  { path: 'users', Page: UserManagementPage },
-  { path: 'brands', Page: BrandPage },
-  { path: 'categories', Page: CategoryPage },
-  { path: 'customers', Page: CustomerPage },
-  { path: 'customers/:id/history', Page: CustomerHistoryPage },
-  { path: 'customers/:id/active-borrowings', Page: ActiveBorrowingsPage },
-  { path: 'customers/:id/returned-history', Page: CustomerReturnedHistoryPage },
-  { path: 'customers/:id/purchase-history', Page: CustomerPurchaseHistoryPage },
+  // Business
   { path: 'sales', Page: SalePage },
   { path: 'sales/new', Page: CreateSalePage },
   { path: 'sales/:saleId', Page: SaleDetailPage },
@@ -58,7 +61,27 @@ const routes = [
   { path: 'borrowings', Page: BorrowingPage },
   { path: 'borrowings/new', Page: CreateBorrowingPage },
   { path: 'borrowings/:borrowingId', Page: BorrowingDetailPage },
-  { path: 'product-models', Page: ProductModelPage }, // --- เพิ่มบรรทัดนี้ ---
+  { path: 'customers', Page: CustomerPage },
+  { path: 'customers/:id/history', Page: CustomerHistoryPage },
+  { path: 'customers/:id/active-borrowings', Page: ActiveBorrowingsPage },
+  { path: 'customers/:id/returned-history', Page: CustomerReturnedHistoryPage },
+  { path: 'customers/:id/purchase-history', Page: CustomerPurchaseHistoryPage },
+  // Assets (Transaction Based)
+  { path: 'asset-assignments', Page: AssetAssignmentPage },
+  { path: 'asset-assignments/new', Page: CreateAssetAssignmentPage },
+  { path: 'asset-assignments/:assignmentId', Page: AssetAssignmentDetailPage },
+  // Products & Master Data
+  { path: 'inventory', Page: InventoryPage }, // For Saleable Items
+  { path: 'assets', Page: AssetPage }, // For Master Asset List
+  { path: 'assets/new', Page: CreateAssetPage }, // For creating a master asset item
+  { path: 'assets/:assetId/history', Page: AssetHistoryPage },
+  { path: 'assets/edit/:assetId', Page: EditAssetPage }, // For editing a master asset item
+  { path: 'product-models', Page: ProductModelPage },
+  { path: 'brands', Page: BrandPage },
+  { path: 'categories', Page: CategoryPage },
+  // System
+  { path: 'users', Page: UserManagementPage },
+  { path: 'users/:userId/assets', Page: UserAssetHistoryPage },
   { path: 'profile', Page: ProfilePage },
 ];
 

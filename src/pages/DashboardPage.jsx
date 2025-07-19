@@ -6,9 +6,8 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Pie, PieChart, Cell } from 'recharts';
 
-// --- Helper Functions ---
 const calculateSaleTotal = (items) => items.reduce((sum, item) => sum + (item.productModel?.sellingPrice || 0), 0);
-const COLORS = ['#16A34A', '#64748B', '#F97316', '#DC2626']; // Colors for Pie Chart
+const COLORS = ['#16A34A', '#64748B', '#F97316', '#DC2626', '#3B82F6'];
 
 export default function DashboardPage() {
     const [stats, setStats] = useState(null);
@@ -39,16 +38,16 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-6">
-            {/* 1. Stat Cards */}
+            {/* --- START: ส่วนที่แก้ไข: เพิ่ม Stat Cards ของ Asset --- */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
                 <Card><CardHeader><CardTitle>Total Revenue</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{stats.totalRevenue.toLocaleString()} THB</p></CardContent></Card>
-                <Card><CardHeader><CardTitle>Items In Stock</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{stats.itemsInStock.toLocaleString()}</p></CardContent></Card>
-                <Card><CardHeader><CardTitle>Total Sales (Last 7 Days)</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{stats.salesChartData.reduce((acc, cur) => acc + cur.total, 0)}</p></CardContent></Card>
-                <Card><CardHeader><CardTitle>Defective Items</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold text-red-600">{stats.stockStatus.find(s => s.status === 'DEFECTIVE')?._count.id || 0}</p></CardContent></Card>
+                <Card><CardHeader><CardTitle>Items In Stock (For Sale)</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{stats.itemsInStock.toLocaleString()}</p></CardContent></Card>
+                <Card><CardHeader><CardTitle>Total Company Assets</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{stats.totalAssets.toLocaleString()}</p></CardContent></Card>
+                <Card><CardHeader><CardTitle>Assigned Assets</CardTitle></CardHeader><CardContent><p className="text-2xl font-bold">{stats.assignedAssets.toLocaleString()}</p></CardContent></Card>
             </div>
+             {/* --- END --- */}
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-                {/* 2. Sales Chart */}
                 <Card className="lg:col-span-4">
                     <CardHeader><CardTitle>Sales Last 7 Days</CardTitle></CardHeader>
                     <CardContent>
@@ -63,9 +62,8 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                {/* 4. Stock Overview */}
                 <Card className="lg:col-span-3">
-                    <CardHeader><CardTitle>Stock Overview</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>Inventory Stock Overview</CardTitle></CardHeader>
                     <CardContent>
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
@@ -79,7 +77,6 @@ export default function DashboardPage() {
                 </Card>
             </div>
 
-             {/* 3. Recent Sales */}
             <Card>
                 <CardHeader><CardTitle>Recent Sales</CardTitle></CardHeader>
                 <CardContent>
@@ -90,7 +87,7 @@ export default function DashboardPage() {
                                 <td className="p-2">{sale.customer.name}</td>
                                 <td className="p-2">{new Date(sale.saleDate).toLocaleString()}</td>
                                 <td className="p-2 text-center">{sale.itemsSold.length}</td>
-                                <td className="p-2 text-right">{calculateSaleTotal(sale.itemsSold).toLocaleString()} THB</td>
+                                <td className="p-2 text-right">{sale.total.toLocaleString()} THB</td>
                             </tr>
                         ))}</tbody>
                     </table>

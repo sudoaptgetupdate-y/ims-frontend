@@ -26,7 +26,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// --- START: ส่วนที่แก้ไข 1: สร้าง Skeleton Row Component ---
 const SkeletonRow = () => (
     <tr className="border-b">
         <td className="p-2"><div className="h-5 bg-gray-200 rounded animate-pulse"></div></td>
@@ -37,7 +36,6 @@ const SkeletonRow = () => (
         <td className="p-2 text-center"><div className="h-8 w-14 bg-gray-200 rounded-md animate-pulse mx-auto"></div></td>
     </tr>
 );
-// --- END ---
 
 const initialFormData = {
     serialNumber: "",
@@ -55,15 +53,18 @@ export default function InventoryPage() {
     const { 
         data: inventoryItems, pagination, isLoading, searchTerm, filters,
         handleSearchChange, handlePageChange, handleItemsPerPageChange, handleFilterChange, refreshData 
-    } = usePaginatedFetch("http://localhost:5001/api/inventory-items", 10, { status: "All" });
+    } = usePaginatedFetch("http://localhost:5001/api/inventory-items", 10, { 
+        status: "All",
+        itemType: "SALE" // --- เพิ่มบรรทัดนี้ ---
+    });
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [formData, setFormData] = useState(initialFormData);
     const [editingItemId, setEditingItemId] = useState(null);
+    const [selectedModelInfo, setSelectedModelInfo] = useState(null);
     const [isMacRequired, setIsMacRequired] = useState(true);
     const [isSerialRequired, setIsSerialRequired] = useState(true);
-    const [selectedModelInfo, setSelectedModelInfo] = useState(null);
 
     const getStatusVariant = (status) => {
         switch (status) {
@@ -114,14 +115,6 @@ export default function InventoryPage() {
         e.preventDefault();
         if (!formData.productModelId) {
             toast.error("Please select a Product Model.");
-            return;
-        }
-        if (isSerialRequired && !formData.serialNumber) {
-            toast.error("Serial Number is required for this product category.");
-            return;
-        }
-        if (isMacRequired && !formData.macAddress) {
-            toast.error("MAC Address is required for this product category.");
             return;
         }
         
@@ -209,7 +202,6 @@ export default function InventoryPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {/* --- START: ส่วนที่แก้ไข 2: เรียกใช้ Skeleton ตอน Loading --- */}
                             {isLoading ? (
                                 [...Array(pagination.itemsPerPage)].map((_, i) => <SkeletonRow key={i} />)
                             ) : inventoryItems.length > 0 ? (
@@ -291,7 +283,6 @@ export default function InventoryPage() {
                             ) : (
                                 <tr><td colSpan="6" className="text-center p-4">No items found.</td></tr>
                             )}
-                             {/* --- END --- */}
                         </tbody>
                     </table>
                 </div>
@@ -314,6 +305,7 @@ export default function InventoryPage() {
                     <Button variant="outline" size="sm" onClick={() => handlePageChange(pagination.currentPage + 1)} disabled={!pagination || pagination.currentPage >= pagination.totalPages}>Next</Button>
                 </div>
             </CardFooter>
+
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
                     <DialogHeader><DialogTitle>{isEditMode ? 'Edit' : 'Add New'} Item</DialogTitle></DialogHeader>
@@ -329,12 +321,12 @@ export default function InventoryPage() {
                             </div>
                         )}
                         <div className="space-y-2">
-                            <Label htmlFor="serialNumber">Serial Number{!isSerialRequired && <span className="text-xs text-slate-500 ml-2">(Optional)</span>}</Label>
-                            <Input id="serialNumber" value={formData.serialNumber || ''} onChange={handleInputChange} required={isSerialRequired} />
+                            <Label htmlFor="serialNumber">Serial Number {!isSerialRequired && <span className="text-xs text-slate-500 ml-2">(Not Required)</span>}</Label>
+                            <Input id="serialNumber" value={formData.serialNumber || ''} onChange={handleInputChange} required={isSerialRequired} disabled={!isSerialRequired} />
                         </div>
                         <div className="space-y-2">
-                             <Label htmlFor="macAddress">MAC Address{!isMacRequired && <span className="text-xs text-slate-500 ml-2">(Optional)</span>}</Label>
-                             <Input id="macAddress" value={formData.macAddress || ''} onChange={handleInputChange} required={isMacRequired} />
+                             <Label htmlFor="macAddress">MAC Address {!isMacRequired && <span className="text-xs text-slate-500 ml-2">(Not Required)</span>}</Label>
+                             <Input id="macAddress" value={formData.macAddress || ''} onChange={handleInputChange} required={isMacRequired} disabled={!isMacRequired} />
                         </div>
                         {isEditMode && (
                              <div className="space-y-2">
