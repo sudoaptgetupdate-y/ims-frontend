@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { LogOut, Menu, X, UserCircle, User, ArrowRightLeft, Building2, ShoppingCart, Settings, Package, Boxes, Tag, Users, HardDrive, Layers } from "lucide-react";
+import { LogOut, Menu, X, UserCircle, User, ArrowRightLeft, Building2, ShoppingCart, Settings, Package, Boxes, Tag, Users as UsersIcon, HardDrive, Layers } from "lucide-react"; // Renamed Users to UsersIcon to avoid conflict
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -62,15 +62,7 @@ const MainLayout = () => {
                     <div className="space-y-1">
                         <NavItem to="/sales" handleclick={onNavLinkClick}><ShoppingCart size={18} /> Sales</NavItem>
                         <NavItem to="/borrowings" handleclick={onNavLinkClick}><ArrowRightLeft size={18} /> Borrowing</NavItem>
-                        <NavItem to="/customers" handleclick={onNavLinkClick}><Users size={18} /> Customers</NavItem>
-                    </div>
-                </div>
-
-                <div>
-                    <p className="px-3 py-2 text-slate-400 text-xs font-bold uppercase">Assets</p>
-                    <div className="space-y-1">
-                        <NavItem to="/asset-assignments" handleclick={onNavLinkClick}><HardDrive size={18}/> Asset Assignments</NavItem>
-                        <NavItem to="/assets" handleclick={onNavLinkClick}><Layers size={18}/> All Assets</NavItem>
+                        <NavItem to="/customers" handleclick={onNavLinkClick}><UsersIcon size={18} /> Customers</NavItem>
                     </div>
                 </div>
 
@@ -78,16 +70,25 @@ const MainLayout = () => {
                     <p className="px-3 py-2 text-slate-400 text-xs font-bold uppercase">Products</p>
                      <div className="space-y-1">
                         <NavItem to="/inventory" handleclick={onNavLinkClick}><Package size={18}/> Inventory</NavItem>
-                        <NavItem to="/product-models" handleclick={onNavLinkClick}><Boxes size={18} /> Product Models</NavItem>
+                        <NavItem to="/product-models" handleclick={onNavLinkClick}><Boxes size={18} /> Models</NavItem>
                         <NavItem to="/brands" handleclick={onNavLinkClick}><Building2 size={18} /> Brands</NavItem>
                         <NavItem to="/categories" handleclick={onNavLinkClick}><Tag size={18} /> Categories</NavItem>
                     </div>
                 </div>
+
+                <div>
+                    <p className="px-3 py-2 text-slate-400 text-xs font-bold uppercase">Assets</p>
+                    <div className="space-y-1">
+                        <NavItem to="/asset-assignments" handleclick={onNavLinkClick}><HardDrive size={18}/> Assignments</NavItem>
+                        <NavItem to="/assets" handleclick={onNavLinkClick}><Layers size={18}/> Asset List</NavItem>
+                    </div>
+                </div>
+
                 {isSuperAdmin && (
                      <div>
                         <p className="px-3 py-2 text-slate-400 text-xs font-bold uppercase">System</p>
                         <div className="space-y-1">
-                            <NavItem to="/users" handleclick={onNavLinkClick}><Settings size={18}/> User Management</NavItem>
+                            <NavItem to="/users" handleclick={onNavLinkClick}><Settings size={18}/> Users</NavItem>
                         </div>
                     </div>
                 )}

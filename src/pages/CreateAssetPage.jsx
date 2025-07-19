@@ -12,6 +12,17 @@ import { toast } from "sonner";
 import { ProductModelCombobox } from "@/components/ui/ProductModelCombobox";
 import { ArrowLeft } from "lucide-react";
 
+const formatMacAddress = (value) => {
+  const cleaned = (value || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+  if (cleaned.length === 0) return '';
+  return cleaned.match(/.{1,2}/g).slice(0, 6).join(':');
+};
+
+const validateMacAddress = (mac) => {
+  const macRegex = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
+  return macRegex.test(mac);
+};
+
 const initialFormData = {
     assetCode: "",
     serialNumber: "",
@@ -28,7 +39,21 @@ export default function CreateAssetPage() {
     const [isMacRequired, setIsMacRequired] = useState(true);
     const [isSerialRequired, setIsSerialRequired] = useState(true);
 
-    const handleInputChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value });
+    const handleInputChange = (e) => {
+        const { id, value } = e.target;
+        // --- START: ส่วนที่แก้ไข ---
+        if (id === 'serialNumber' || id === 'assetCode') {
+            setFormData({ ...formData, [id]: value.toUpperCase() });
+        } else {
+            setFormData({ ...formData, [id]: value });
+        }
+        // --- END ---
+    };
+
+    const handleMacAddressChange = (e) => {
+        const formatted = formatMacAddress(e.target.value);
+        setFormData({ ...formData, macAddress: formatted });
+    };
 
     const handleModelSelect = (model) => {
         if (model) {
@@ -43,6 +68,11 @@ export default function CreateAssetPage() {
     
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isMacRequired && formData.macAddress && !validateMacAddress(formData.macAddress)) {
+            toast.error("Invalid MAC Address format. Please use XX:XX:XX:XX:XX:XX format.");
+            return;
+        }
+
         if (!formData.productModelId) {
             toast.error("Please select a Product Model.");
             return;
@@ -53,7 +83,6 @@ export default function CreateAssetPage() {
         }
         
         try {
-            // เราจะใช้ Endpoint เดิม แต่ส่ง itemType: 'ASSET' ไปด้วย
             await axios.post("http://localhost:5001/api/inventory-items", {
                 ...formData,
                 itemType: 'ASSET' 
@@ -100,7 +129,15 @@ export default function CreateAssetPage() {
                         </div>
                         <div className="space-y-2">
                              <Label htmlFor="macAddress">MAC Address {!isMacRequired && <span className="text-xs text-slate-500 ml-2">(Not Required)</span>}</Label>
-                             <Input id="macAddress" value={formData.macAddress || ''} onChange={handleInputChange} required={isMacRequired} disabled={!isMacRequired} />
+                             <Input 
+                                id="macAddress" 
+                                value={formData.macAddress} 
+                                onChange={handleMacAddressChange} 
+                                required={isMacRequired} 
+                                disabled={!isMacRequired}
+                                maxLength={17}
+                                placeholder="AA:BB:CC:DD:EE:FF"
+                             />
                         </div>
                     </CardContent>
                     <CardFooter>

@@ -15,7 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { usePaginatedFetch } from "@/hooks/usePaginatedFetch";
 import { ProductModelCombobox } from "@/components/ui/ProductModelCombobox";
-
 import { MoreHorizontal, View, ShoppingCart, ArrowRightLeft, Edit, Trash2, PlusCircle } from "lucide-react";
 import {
   DropdownMenu,
@@ -37,6 +36,18 @@ const SkeletonRow = () => (
     </tr>
 );
 
+// --- START: 1. เพิ่มฟังก์ชันสำหรับ MAC Address ---
+const formatMacAddress = (value) => {
+  const cleaned = (value || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+  if (cleaned.length === 0) return '';
+  return cleaned.match(/.{1,2}/g).slice(0, 6).join(':');
+};
+
+const validateMacAddress = (mac) => {
+  const macRegex = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
+  return macRegex.test(mac);
+};
+
 const initialFormData = {
     serialNumber: "",
     macAddress: "",
@@ -53,10 +64,7 @@ export default function InventoryPage() {
     const { 
         data: inventoryItems, pagination, isLoading, searchTerm, filters,
         handleSearchChange, handlePageChange, handleItemsPerPageChange, handleFilterChange, refreshData 
-    } = usePaginatedFetch("http://localhost:5001/api/inventory-items", 10, { 
-        status: "All",
-        itemType: "SALE" // --- เพิ่มบรรทัดนี้ ---
-    });
+    } = usePaginatedFetch("http://localhost:5001/api/inventory-items", 10, { status: "All", itemType: "SALE" });
     
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
@@ -98,7 +106,20 @@ export default function InventoryPage() {
         setIsDialogOpen(true);
     };
 
-    const handleInputChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value });
+    const handleInputChange = (e) => {
+        const { id, value } = e.target;
+        if (id === 'serialNumber') {
+            setFormData({ ...formData, [id]: value.toUpperCase() });
+        } else {
+            setFormData({ ...formData, [id]: value });
+        }
+    };
+
+    const handleMacAddressChange = (e) => {
+        const formatted = formatMacAddress(e.target.value);
+        setFormData({ ...formData, macAddress: formatted });
+    };
+    // --- END ---
 
     const handleModelSelect = (model) => {
         if (model) {
@@ -113,6 +134,12 @@ export default function InventoryPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isMacRequired && formData.macAddress && !validateMacAddress(formData.macAddress)) {
+            toast.error("Invalid MAC Address format. Please use XX:XX:XX:XX:XX:XX format.");
+            return;
+        }
+        // --- END ---
+
         if (!formData.productModelId) {
             toast.error("Please select a Product Model.");
             return;
@@ -326,7 +353,17 @@ export default function InventoryPage() {
                         </div>
                         <div className="space-y-2">
                              <Label htmlFor="macAddress">MAC Address {!isMacRequired && <span className="text-xs text-slate-500 ml-2">(Not Required)</span>}</Label>
-                             <Input id="macAddress" value={formData.macAddress || ''} onChange={handleInputChange} required={isMacRequired} disabled={!isMacRequired} />
+                             {/* --- START: 4. เปลี่ยน onChange ของ Input นี้ --- */}
+                             <Input 
+                                id="macAddress" 
+                                value={formData.macAddress || ''} 
+                                onChange={handleMacAddressChange} 
+                                required={isMacRequired} 
+                                disabled={!isMacRequired}
+                                maxLength={17}
+                                placeholder="AA:BB:CC:DD:EE:FF"
+                             />
+                             {/* --- END --- */}
                         </div>
                         {isEditMode && (
                              <div className="space-y-2">

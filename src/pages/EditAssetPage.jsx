@@ -12,6 +12,17 @@ import { toast } from "sonner";
 import { ProductModelCombobox } from "@/components/ui/ProductModelCombobox";
 import { ArrowLeft } from "lucide-react";
 
+const formatMacAddress = (value) => {
+  const cleaned = (value || '').replace(/[^0-9a-fA-F]/g, '').toUpperCase();
+  if (cleaned.length === 0) return '';
+  return cleaned.match(/.{1,2}/g).slice(0, 6).join(':');
+};
+
+const validateMacAddress = (mac) => {
+  const macRegex = /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/;
+  return macRegex.test(mac);
+};
+
 export default function EditAssetPage() {
     const { assetId } = useParams();
     const navigate = useNavigate();
@@ -26,11 +37,9 @@ export default function EditAssetPage() {
     useEffect(() => {
         const fetchAsset = async () => {
             try {
-                // --- START: ส่วนที่แก้ไข ---
                 const response = await axios.get(`http://localhost:5001/api/inventory-items/${assetId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                // --- END ---
                 const assetData = response.data;
                 setFormData({
                     assetCode: assetData.assetCode,
@@ -51,7 +60,19 @@ export default function EditAssetPage() {
         fetchAsset();
     }, [assetId, token, navigate]);
 
-    const handleInputChange = (e) => setFormData({ ...formData, [e.target.id]: e.target.value });
+    const handleInputChange = (e) => {
+        const { id, value } = e.target;
+        if (id === 'serialNumber' || id === 'assetCode') {
+            setFormData({ ...formData, [id]: value.toUpperCase() });
+        } else {
+            setFormData({ ...formData, [id]: value });
+        }
+    };
+    
+    const handleMacAddressChange = (e) => {
+        const formatted = formatMacAddress(e.target.value);
+        setFormData({ ...formData, macAddress: formatted });
+    };
     
     const handleModelSelect = (model) => {
         if (model) {
@@ -65,12 +86,14 @@ export default function EditAssetPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (isMacRequired && formData.macAddress && !validateMacAddress(formData.macAddress)) {
+            toast.error("Invalid MAC Address format.");
+            return;
+        }
         try {
-            // --- START: ส่วนที่แก้ไข ---
             await axios.put(`http://localhost:5001/api/inventory-items/${assetId}`, formData, { 
                 headers: { Authorization: `Bearer ${token}` } 
             });
-            // --- END ---
             toast.success("Asset updated successfully!");
             navigate(`/assets`);
         } catch (error) {
@@ -107,7 +130,7 @@ export default function EditAssetPage() {
                         </div>
                         <div className="space-y-2">
                              <Label htmlFor="macAddress">MAC Address {!isMacRequired && <span className="text-xs text-slate-500 ml-2">(Not Required)</span>}</Label>
-                             <Input id="macAddress" value={formData.macAddress} onChange={handleInputChange} disabled={!isMacRequired} required={isMacRequired} />
+                             <Input id="macAddress" value={formData.macAddress} onChange={handleMacAddressChange} disabled={!isMacRequired} required={isMacRequired} maxLength={17} />
                         </div>
                     </CardContent>
                     <CardFooter>

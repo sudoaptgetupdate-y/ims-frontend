@@ -83,11 +83,11 @@ export default function AssetPage() {
                     </div>
                     {canManage && 
                         <div className="flex gap-2">
-                             <Button onClick={() => navigate('/asset-assignments/new')}>
-                               <ArrowRightLeft className="mr-2 h-4 w-4" /> Assign Asset
+                            <Button variant="outline" onClick={() => navigate('/assets/new')}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Add Asset
                             </Button>
-                            <Button onClick={() => navigate('/assets/new')}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Add New Asset
+                            <Button onClick={() => navigate('/asset-assignments/new')}>
+                               <ArrowRightLeft className="mr-2 h-4 w-4" /> Assign
                             </Button>
                         </div>
                     }
@@ -151,12 +151,10 @@ export default function AssetPage() {
                                     <td className="p-2 text-center">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                {/* --- START: ส่วนที่แก้ไข --- */}
                                                 <Button variant="primary-outline" size="icon" className="h-8 w-14 p-0">
                                                     <span className="sr-only">Open menu</span>
                                                     <MoreHorizontal className="h-4 w-4" />
                                                 </Button>
-                                                {/* --- END --- */}
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>

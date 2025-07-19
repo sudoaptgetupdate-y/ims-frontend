@@ -1,55 +1,63 @@
 // src/components/dialogs/CustomerFormDialog.jsx
 
-import { useEffect, useState } from "react";
-import axios from "axios";
-import useAuthStore from "@/store/authStore";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { useState, useEffect } from 'react';
+import {
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-
-const initialData = {
-    customerCode: "",
-    name: "",
-    phone: "",
-    address: ""
-};
+import { toast } from 'sonner';
+import axios from 'axios';
+import useAuthStore from '@/store/authStore';
 
 export default function CustomerFormDialog({ open, onOpenChange, customer, isEditMode, onSuccess }) {
+    const [formData, setFormData] = useState({
+        customerCode: '',
+        name: '',
+        phone: '',
+        address: ''
+    });
     const token = useAuthStore((state) => state.token);
-    const [formData, setFormData] = useState(initialData);
 
     useEffect(() => {
-        if (isEditMode && customer) {
+        if (open && isEditMode && customer) {
             setFormData({
-                customerCode: customer.customerCode,
+                customerCode: customer.customerCode.toUpperCase(), // --- แก้ไข ---
                 name: customer.name,
-                phone: customer.phone || "",
-                address: customer.address || "",
+                phone: customer.phone || '',
+                address: customer.address || ''
             });
-        } else {
-            setFormData(initialData);
+        } else if (open && !isEditMode) {
+            setFormData({ customerCode: '', name: '', phone: '', address: '' });
         }
-    }, [isEditMode, customer, open]);
+    }, [open, isEditMode, customer]);
 
-    const handleInputChange = (e) => {
+    const handleChange = (e) => {
         const { id, value } = e.target;
-        setFormData(prev => ({ ...prev, [id]: value }));
+        // --- START: ส่วนที่แก้ไข ---
+        if (id === 'customerCode') {
+            setFormData(prev => ({ ...prev, [id]: value.toUpperCase() }));
+        } else {
+            setFormData(prev => ({ ...prev, [id]: value }));
+        }
+        // --- END ---
     };
-
+    
     const handleSubmit = async (e) => {
         e.preventDefault();
         const url = isEditMode
             ? `http://localhost:5001/api/customers/${customer.id}`
-            : "http://localhost:5001/api/customers";
+            : 'http://localhost:5001/api/customers';
         const method = isEditMode ? 'put' : 'post';
 
         try {
-            await axios[method](url, formData, { headers: { Authorization: `Bearer ${token}` } });
-            toast.success(`Customer has been ${isEditMode ? 'updated' : 'created'} successfully.`);
-            onSuccess(); // Re-fetch data on the parent page
-            onOpenChange(false); // Close the dialog
+            await axios[method](url, formData, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            toast.success(`Customer ${isEditMode ? 'updated' : 'created'} successfully.`);
+            onSuccess();
+            onOpenChange(false);
         } catch (error) {
             toast.error(error.response?.data?.error || `Failed to ${isEditMode ? 'update' : 'create'} customer.`);
         }
@@ -61,29 +69,31 @@ export default function CustomerFormDialog({ open, onOpenChange, customer, isEdi
                 <DialogHeader>
                     <DialogTitle>{isEditMode ? 'Edit Customer' : 'Add New Customer'}</DialogTitle>
                     <DialogDescription>
-                        {isEditMode ? `Editing details for ${customer?.name}.` : "Fill in the details for the new customer."}
+                        {isEditMode ? 'Update the customer details below.' : 'Fill in the form to create a new customer.'}
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <Label htmlFor="customerCode">Customer Code</Label>
-                        <Input id="customerCode" value={formData.customerCode} onChange={handleInputChange} required />
-                    </div>
-                    <div>
-                        <Label htmlFor="name">Full Name</Label>
-                        <Input id="name" value={formData.name} onChange={handleInputChange} required />
-                    </div>
-                    <div>
-                        <Label htmlFor="phone">Phone Number</Label>
-                        <Input id="phone" value={formData.phone} onChange={handleInputChange} />
-                    </div>
-                    <div>
-                        <Label htmlFor="address">Address</Label>
-                        <Input id="address" value={formData.address} onChange={handleInputChange} />
+                <form onSubmit={handleSubmit}>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="customerCode">Customer Code</Label>
+                            <Input id="customerCode" value={formData.customerCode} onChange={handleChange} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Name</Label>
+                            <Input id="name" value={formData.name} onChange={handleChange} required />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="phone">Phone</Label>
+                            <Input id="phone" value={formData.phone} onChange={handleChange} />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="address">Address</Label>
+                            <Input id="address" value={formData.address} onChange={handleChange} />
+                        </div>
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                        <Button type="submit">{isEditMode ? 'Save Changes' : 'Create Customer'}</Button>
+                        <DialogClose asChild><Button type="button" variant="secondary">Cancel</Button></DialogClose>
+                        <Button type="submit">Save</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>
